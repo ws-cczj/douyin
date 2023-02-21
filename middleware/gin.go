@@ -22,17 +22,13 @@ func GinLogger() gin.HandlerFunc {
 
 		cost := time.Since(start)
 		// 只记录异常信息
-		if c.Writer.Status() != http.StatusOK {
-			zap.L().Error(query,
-				zap.Int("status", c.Writer.Status()),
-				zap.String("method", c.Request.Method),
-				zap.String("path", path),
-				zap.String("ip", c.ClientIP()),
-				zap.String("user-agent", c.Request.UserAgent()),
-				zap.String("errors", c.Errors.ByType(gin.ErrorTypePrivate).String()),
-				zap.Duration("cost", cost),
-			)
-		}
+		zap.L().Debug(path,
+			zap.String("method", c.Request.Method),
+			zap.String("query", query),
+			zap.String("ip", c.ClientIP()),
+			zap.String("user-agent", c.Request.UserAgent()),
+			zap.Duration("cost", cost),
+		)
 	}
 }
 

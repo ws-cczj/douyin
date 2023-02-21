@@ -1,0 +1,33 @@
+server:
+  mode: "debug"
+#  mode: "release"
+  ip: "192.168.43.219"
+  port: 8080
+snowflake:
+  start_at: "2023-02-01"
+  machines: 1
+jwt:
+  token_at: 864000 # 24 * 3600
+logger:
+  filename: "douyin.log"
+  layout: "[2006-01-02 15:04:05]"
+  max_size: 200
+  max_age: 30
+  max_backups: 7
+mysql:
+  host: "127.0.0.1"
+  port: 3306
+  dbname: "douyin"
+  username: "root"
+  password: "541688"
+  max_idles_conns: 50
+  max_opens_conns: 200
+redis:
+  addr: "cczj:6379"
+  password: ""
+  user_db: 1
+  relation_db: 2
+  video_db: 3
+  favor_db: 4
+  comment_db: 5
+  pool_size: 100

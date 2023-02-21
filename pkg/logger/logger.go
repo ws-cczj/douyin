@@ -10,8 +10,8 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-// init 初始化日志库
-func init() {
+// InitLogger 初始化日志库
+func InitLogger() {
 	encoderConfig := zap.NewProductionEncoderConfig()
 	// 打印级别为大写 & 彩色
 	encoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
