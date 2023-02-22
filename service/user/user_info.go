@@ -87,7 +87,7 @@ func (i *InfoFlow) prepareData() (err error) {
 		// 使用协程重置缓存
 		go func() {
 			key := utils.AddCacheKey(consts.CacheRelation, consts.CacheSetUserFollow, utils.I64toa(i.userId))
-			cache.NewRelationCache().SAddMoreActionUserFollowAndFollower(key, ids)
+			cache.NewRelationCache().SAddReSetActionUserFollowAndFollower(key, ids)
 		}()
 	}
 	if i.followerCount, err = cache.NewRelationCache().SCardQueryUserFollowers(i.userId); i.followerCount < 0 {
@@ -109,7 +109,7 @@ func (i *InfoFlow) prepareData() (err error) {
 		// 使用协程重置缓存
 		go func() {
 			key := utils.AddCacheKey(consts.CacheRelation, consts.CacheSetUserFollower, utils.I64toa(i.userId))
-			cache.NewRelationCache().SAddMoreActionUserFollowAndFollower(key, ids)
+			cache.NewRelationCache().SAddReSetActionUserFollowAndFollower(key, ids)
 		}()
 	}
 	// 用户发表的视频列表
@@ -120,7 +120,7 @@ func (i *InfoFlow) prepareData() (err error) {
 			zap.L().Error("service user_info QueryUserVideoList method exec fail!", zap.Error(err))
 			return
 		}
-		go cache.NewUserCache().SAddMoreUserVideoList(i.userId, videoIds)
+		go cache.NewUserCache().SAddReSetUserVideoList(i.userId, videoIds)
 	}
 	if i.workCount = int64(len(videoIds)); i.workCount > 0 {
 		if i.totalFavor, err = cache.NewVideoCache().StringQueryVideosFavors(videoIds); i.totalFavor == -1 {

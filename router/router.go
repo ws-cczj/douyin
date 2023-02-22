@@ -22,7 +22,7 @@ func InitRouter(r *gin.Engine) {
 		// basic apis
 		v1.POST("/user/register/", user.RegisterHandler)
 		v1.POST("/user/login/", user.LoginHandler)
-		v1.GET("/feed/", video.FeedHandler)
+		v1.GET("/feed/", middleware.FeedAuth(), video.FeedHandler)
 		// 加入JWT认证中间件
 		v1.Use(middleware.Auth())
 		{

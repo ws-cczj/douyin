@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"os"
+	"runtime/debug"
 	"strings"
 	"time"
 
@@ -21,7 +22,6 @@ func GinLogger() gin.HandlerFunc {
 		c.Next()
 
 		cost := time.Since(start)
-		// 只记录异常信息
 		zap.L().Debug(path,
 			zap.String("method", c.Request.Method),
 			zap.String("query", query),
@@ -60,7 +60,9 @@ func GinRecovery() gin.HandlerFunc {
 					c.Abort()
 					return
 				}
+				split := strings.Split(string(debug.Stack()), "\n\t")
 				zap.L().Error("[Recovery from panic]", zap.Any("error", err))
+				zap.L().Error("[STACK DEBUG]", zap.String("stack", split[0]))
 				c.AbortWithStatus(http.StatusInternalServerError)
 			}
 		}()

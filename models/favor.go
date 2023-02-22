@@ -75,5 +75,6 @@ func (*FavorDao) QueryUserFavorVideoList(userId int64) (favorsVideos []int64, er
 			err = nil
 		}
 	}
-	return
+	zero := utils.SearchZero(favorsVideos)
+	return favorsVideos[:zero], err
 }

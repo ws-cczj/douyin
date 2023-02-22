@@ -80,8 +80,8 @@ func (*RelationCache) SRemActionUserFollowAndFollower(userId, toUserId int64, us
 	return
 }
 
-// SAddMoreActionUserFollowAndFollower 用户多次关注行为缓存重置
-func (*RelationCache) SAddMoreActionUserFollowAndFollower(key string, toUserIds []int64) {
+// SAddReSetActionUserFollowAndFollower 用户多次关注行为缓存重置
+func (*RelationCache) SAddReSetActionUserFollowAndFollower(key string, toUserIds []int64) {
 	pipe := rdbRelation.Pipeline()
 	// 填充初始数据 -1
 	pipe.SAdd(ctx, key, -1)

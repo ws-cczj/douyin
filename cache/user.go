@@ -56,8 +56,8 @@ func (*UserCache) SMembersQueryUserVideoList(userId int64) ([]int64, error) {
 	return videoList, nil
 }
 
-// SAddMoreUserVideoList 用户发布视频缓存重置
-func (*UserCache) SAddMoreUserVideoList(userId int64, videoIds []int64) {
+// SAddReSetUserVideoList 用户发布视频缓存重置
+func (*UserCache) SAddReSetUserVideoList(userId int64, videoIds []int64) {
 	key := utils.AddCacheKey(consts.CacheUser, consts.CacheSetUserVideo, utils.I64toa(userId))
 	pipe := rdbRelation.Pipeline()
 	// 填充初始数据 -1

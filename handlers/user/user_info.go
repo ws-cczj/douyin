@@ -22,19 +22,19 @@ func InfoHandler(c *gin.Context) {
 	tkUidStr, _ := c.Get("user_id")
 	tkUid, ok := tkUidStr.(int64)
 	if !ok {
-		zap.L().Error("handlers InfoHandler token.uid invalid")
+		zap.L().Error("handlers user_info InfoHandler uid invalid")
 		common.FailWithCode(c, e.FailTokenInvalid)
 		return
 	}
 	uid, err := strconv.ParseInt(uidStr, 10, 64)
 	if err != nil {
-		zap.L().Error("handlers InfoHandler param uid invalid")
+		zap.L().Error("handlers user_info InfoHandler param uid invalid")
 		common.FailWithCode(c, e.FailParamInvalid)
 		return
 	}
 	infoResponse, err := user.Info(uid, tkUid)
 	if err != nil {
-		zap.L().Error("handlers InfoHandler user.Info method exec fail", zap.Error(err))
+		zap.L().Error("handlers user_info InfoHandler Info method exec fail", zap.Error(err))
 		common.FailWithMsg(c, err.Error())
 		return
 	}

@@ -2,6 +2,7 @@ package models
 
 import (
 	"database/sql"
+	"douyin/pkg/utils"
 	"sync"
 
 	"go.uber.org/zap"
@@ -54,7 +55,8 @@ func (*RelationDao) QueryUserFollowList(userId int64) (toUserIds []int64, err er
 			err = nil
 		}
 	}
-	return
+	zero := utils.SearchZero(toUserIds)
+	return toUserIds[:zero], err
 }
 
 // QueryUserFollowerList 查询用户的粉丝列表
@@ -67,5 +69,6 @@ func (*RelationDao) QueryUserFollowerList(userId int64) (toUserIds []int64, err 
 			err = nil
 		}
 	}
-	return
+	zero := utils.SearchZero(toUserIds)
+	return toUserIds[:zero], err
 }

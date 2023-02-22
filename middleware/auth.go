@@ -34,3 +34,24 @@ func Auth() gin.HandlerFunc {
 		c.Next()
 	}
 }
+
+// FeedAuth 对Feed流进行游客和用户的特殊判断
+func FeedAuth() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		auth := c.Query("token")
+		if auth == "" {
+			auth = c.DefaultPostForm("token", "")
+		}
+		//token := strings.Fields(auth)[1]
+		if len(auth) != 0 {
+			claim, err := utils.VerifyToken(auth)
+			if err != nil {
+				zap.L().Error("middleware VerifyToken method fail!", zap.Error(err))
+				c.Abort()
+				return
+			}
+			c.Set("user_id", claim.UserID)
+		}
+		c.Next()
+	}
+}
