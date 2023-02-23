@@ -1,7 +1,6 @@
 package user
 
 import (
-	"douyin/cache"
 	"douyin/consts"
 	"douyin/models"
 	"douyin/pkg/utils"
@@ -44,7 +43,7 @@ func (r *RegisterFlow) Do() (*LoginResponse, error) {
 }
 
 // CheckNum 校验参数
-func (r *RegisterFlow) checkNum() error {
+func (r *RegisterFlow) checkNum() (err error) {
 	if r.username == "" {
 		return errors.New("用户名为空")
 	}
@@ -57,37 +56,37 @@ func (r *RegisterFlow) checkNum() error {
 	if len(r.password) > consts.MaxUserPasswordLimit {
 		return errors.New("超出用户密码字数上限")
 	}
+	// 检查用户名是否重复
+	if r.userId, err = models.NewUserDao().IsExistUsername(r.username); err != nil {
+		zap.L().Error("service user_register isExistUsername method exec fail", zap.Error(err))
+		return
+	}
+	if r.userId != 0 {
+		zap.L().Warn("service user_register current Username already exists!")
+		return errors.New("用户名已经存在")
+	}
 	return nil
 }
 
 // updateData 更新数据
 func (r *RegisterFlow) updateData() (err error) {
-	userDao := models.NewUserDao()
-	// 1. 检查用户名是否重复
-	if r.userId, err = userDao.IsExistUsername(r.username); err != nil {
-		zap.L().Error("service user_register isExistUsername method exec fail", zap.Error(err))
-		return
-	}
-	if r.userId != 0 {
-		zap.L().Error("service user_register current Username already exists!")
-		return errors.New("用户名已经存在")
-	}
-	// 2. 生成雪花ID
+	// 1. 生成雪花ID
 	r.userId = utils.GenID()
-	// 3. 密码加密
+	// 2. 密码加密
 	r.password = utils.SHA1(r.password)
-	// 4. 注册执行
-	if err = userDao.AddUser(r.userId, r.username, r.password); err != nil {
+	// 3. 注册执行
+	if err = models.NewUserDao().AddUser(r.userId, r.username, r.password); err != nil {
 		zap.L().Error("service user_register AddUser method exec fail", zap.Error(err))
 		return
 	}
-	// 5. 生成token
+	// 4. 生成token
 	if r.token, err = utils.GenToken(r.userId); err != nil {
 		zap.L().Error("service user_register utils.GenToken method exec fail!", zap.Error(err))
+		return
 	}
-	// 6. 初始化用户缓存数据
-	go cache.NewRelationCache().SAddRegisterActionUserFollowAndFollower(r.userId)
-	go cache.NewFavorCache().SAddUserFavorVideo(r.userId, -1)
+	// 5. 初始化用户缓存数据
+	//go cache.NewRelationCache().SAddRegisterActionUserFollowAndFollower(r.userId)
+	//go cache.NewFavorCache().SAddUserFavorVideo(r.userId, -1)
 	return
 }
 

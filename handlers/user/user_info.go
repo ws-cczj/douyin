@@ -14,7 +14,7 @@ import (
 
 type InfoResponse struct {
 	common.Response
-	*user.InfoResponse
+	*user.InfoResponse `json:"user"`
 }
 
 func InfoHandler(c *gin.Context) {
@@ -32,8 +32,8 @@ func InfoHandler(c *gin.Context) {
 		common.FailWithCode(c, e.FailParamInvalid)
 		return
 	}
-	infoResponse, err := user.Info(uid, tkUid)
-	if err != nil {
+	var infoResponse *user.InfoResponse
+	if infoResponse, err = user.Info(uid, tkUid); err != nil {
 		zap.L().Error("handlers user_info InfoHandler Info method exec fail", zap.Error(err))
 		common.FailWithMsg(c, err.Error())
 		return

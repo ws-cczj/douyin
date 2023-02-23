@@ -9,12 +9,17 @@ import (
 )
 
 type User struct {
-	UserId      int64  `json:"user_id,string" db:"user_id"`
-	Username    string `json:"username" db:"username"`
-	Password    string `json:"password,omitempty" db:"password"`
-	Avatar      string `json:"avatar" db:"avatar"`
-	Description string `json:"signature" db:"description"`
-	BgImage     string `json:"background_image" db:"bg_image"`
+	UserId          int64  `json:"id,string" db:"user_id"`
+	FollowCount     int64  `json:"follow_count" db:"follow_count"`
+	FollowerCount   int64  `json:"follower_count" db:"follower_count"`
+	WorkCount       int64  `json:"work_count" db:"work_count"`
+	FavorCount      int64  `json:"favorite_count" db:"favor_count"`
+	TotalFavorCount int64  `json:"total_favorited,string" db:"total_favor_count"`
+	Username        string `json:"name" db:"username"`
+	Password        string `json:"password,omitempty" db:"password"`
+	Avatar          string `json:"avatar" db:"avatar"`
+	Signature       string `json:"signature" db:"signature"`
+	BackgroundImage string `json:"background_image" db:"background_image"`
 }
 
 type UserDao struct {
@@ -69,7 +74,9 @@ func (*UserDao) QueryUserInfoById(user *User, userId int64) (err error) {
 	if user == nil {
 		return errors.New("null pointer error")
 	}
-	qStr := `select user_id,username,avatar,bg_image,description from users where user_id = ?`
+	qStr := `select user_id,username,avatar,background_image,signature,
+       follow_count,follower_count,work_count,favor_count,total_favor_count
+       from users where user_id = ?`
 	if err = db.GetContext(ctx, user, qStr, userId); err != nil {
 		zap.L().Error("models QueryUserInfoById method exec fail!", zap.Error(err))
 	}

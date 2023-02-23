@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"douyin/cache"
 	"douyin/conf"
 	"douyin/models"
 	"douyin/pkg/logger"
@@ -39,7 +38,7 @@ func InitDevs() {
 	// 初始化数据库
 	models.InitMysql()
 	// 初始化redis缓存
-	cache.InitRedis()
+	//cache.InitRedis()
 	// TODO 初始化敏感词拦截器。
 
 }
@@ -66,5 +65,5 @@ func goAndShutdown(r *gin.Engine) {
 		zap.L().Error("Server Shutdown fail!", zap.Error(err))
 	}
 	models.Close()
-	cache.Close()
+	//cache.Close()
 }

@@ -33,7 +33,7 @@ func NewRelationDao() *RelationDao {
 
 // IsExistRelation 判断是否存在关系
 func (*RelationDao) IsExistRelation(userId, toUserId int64) (bool, error) {
-	qStr := `select is_follow from relations where user_id = ? AND to_user_id = ?`
+	qStr := `select is_follow from user_relations where user_id = ? AND to_user_id = ?`
 	var isFollow int
 	if err := db.GetContext(ctx, &isFollow, qStr, userId, toUserId); err != nil {
 		if err == sql.ErrNoRows {
@@ -47,7 +47,7 @@ func (*RelationDao) IsExistRelation(userId, toUserId int64) (bool, error) {
 
 // QueryUserFollowList 查询用户的关注列表
 func (*RelationDao) QueryUserFollowList(userId int64) (toUserIds []int64, err error) {
-	qStr := `select to_user_id from relations where user_id = ? AND is_follow = ?`
+	qStr := `select to_user_id from user_relations where user_id = ? AND is_follow = ?`
 	toUserIds = make([]int64, 0)
 	if err = db.GetContext(ctx, &toUserIds, qStr, userId, 1); err != nil {
 		if err == sql.ErrNoRows {
@@ -61,7 +61,7 @@ func (*RelationDao) QueryUserFollowList(userId int64) (toUserIds []int64, err er
 
 // QueryUserFollowerList 查询用户的粉丝列表
 func (*RelationDao) QueryUserFollowerList(userId int64) (toUserIds []int64, err error) {
-	qStr := `select user_id from relations where to_user_id = ? AND is_follow = ?`
+	qStr := `select user_id from user_relations where to_user_id = ? AND is_follow = ?`
 	toUserIds = make([]int64, 0)
 	if err = db.GetContext(ctx, &toUserIds, qStr, userId, 1); err != nil {
 		if err == sql.ErrNoRows {

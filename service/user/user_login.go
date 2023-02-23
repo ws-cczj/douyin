@@ -45,7 +45,7 @@ func (l *LoginFlow) Do() (*LoginResponse, error) {
 	return l.data, nil
 }
 
-func (l *LoginFlow) checkNum() error {
+func (l *LoginFlow) checkNum() (err error) {
 	if l.username == "" {
 		return errors.New("用户名为空")
 	}
@@ -58,12 +58,8 @@ func (l *LoginFlow) checkNum() error {
 	if len(l.password) > consts.MaxUserPasswordLimit {
 		return errors.New("超出用户密码字数上限")
 	}
-	return nil
-}
-
-func (l *LoginFlow) prepareData() (err error) {
-	userDao := models.NewUserDao()
 	// 1. 检查用户名是否存在
+	userDao := models.NewUserDao()
 	if l.userId, err = userDao.IsExistUsername(l.username); err != nil {
 		zap.L().Error("service user_login isExistUsername method exec fail!", zap.Error(err))
 		return
@@ -73,8 +69,8 @@ func (l *LoginFlow) prepareData() (err error) {
 		return errors.New("该用户还未注册")
 	}
 	// 2. 判断密码是否正确
-	password, err := userDao.QueryPasswordByUsername(l.username)
-	if err != nil {
+	var password string
+	if password, err = userDao.QueryPasswordByUsername(l.username); err != nil {
 		zap.L().Error("service user_login QueryPasswordByUsername method exec fail!", zap.Error(err))
 		return
 	}
@@ -82,7 +78,10 @@ func (l *LoginFlow) prepareData() (err error) {
 		zap.L().Warn("service user_login password not compared!")
 		return errors.New("用户密码不匹配")
 	}
-	// 3. 生成token
+	return nil
+}
+
+func (l *LoginFlow) prepareData() (err error) {
 	if l.token, err = utils.GenToken(l.userId); err != nil {
 		zap.L().Error("service user_login utils.GenToken method exec fail!", zap.Error(err))
 	}
