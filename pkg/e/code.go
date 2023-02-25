@@ -8,6 +8,7 @@ const (
 	FailTokenExpired
 	FailTokenVerify
 	FailTokenInvalid
+	FailVideoIllegal
 	FailServerBusy
 	FailNotKnow
 )
@@ -19,6 +20,7 @@ var failMsg = map[Code]string{
 	FailTokenExpired:       "user token time expired!",
 	FailTokenVerify:        "user token verify fail!",
 	FailTokenInvalid:       "token invalid!",
+	FailVideoIllegal:       "video format is incorrect!",
 	FailServerBusy:         "server busy!",
 	FailNotKnow:            "not know error!",
 }

@@ -35,8 +35,8 @@ func Auth() gin.HandlerFunc {
 	}
 }
 
-// FeedAuth 对Feed流进行游客和用户的特殊判断
-func FeedAuth() gin.HandlerFunc {
+// VisitorAuth 对Feed流进行游客和用户的特殊判断
+func VisitorAuth() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		auth := c.Query("token")
 		if auth == "" {

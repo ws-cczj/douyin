@@ -6,14 +6,16 @@ server:
 snowflake:
   start_at: "2023-02-01"
   machines: 1
-jwt:
-  token_at: 864000 # 24 * 3600
 logger:
   filename: "douyin.log"
   layout: "[2006-01-02 15:04:05]"
   max_size: 200
   max_age: 30
   max_backups: 7
+ffmpeg:
+  ffmpeg_path: "C:\\Environment\\Go\\bin\\ffmpeg.exe"
+  public_path: "C:\\Users\\18446\\GolandProjects\\project\\douyin\\public"
+  public_pic_path: "C:\\Users\\18446\\GolandProjects\\project\\douyin\\public\\pic"
 mysql:
   host: "127.0.0.1"
   port: 3306

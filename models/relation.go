@@ -32,17 +32,16 @@ func NewRelationDao() *RelationDao {
 }
 
 // IsExistRelation 判断是否存在关系
-func (*RelationDao) IsExistRelation(userId, toUserId int64) (bool, error) {
+func (*RelationDao) IsExistRelation(userId, toUserId int64) (isFollow int, err error) {
 	qStr := `select is_follow from user_relations where user_id = ? AND to_user_id = ?`
-	var isFollow int
-	if err := db.GetContext(ctx, &isFollow, qStr, userId, toUserId); err != nil {
+	if err = db.GetContext(ctx, &isFollow, qStr, userId, toUserId); err != nil {
 		if err == sql.ErrNoRows {
 			zap.L().Warn("models relation IsExistRelation result is null!")
 			err = nil
 		}
-		return false, err
+		return -1, err
 	}
-	return isFollow == 1, nil
+	return isFollow, nil
 }
 
 // QueryUserFollowList 查询用户的关注列表

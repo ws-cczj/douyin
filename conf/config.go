@@ -13,6 +13,7 @@ type Config struct {
 	Server    `mapstructure:"server"`
 	SnowFlake `mapstructure:"snowflake"`
 	Logger    `mapstructure:"logger"`
+	Ffmpeg    `mapstructure:"ffmpeg"`
 	MDB       Mysql `mapstructure:"mysql"`
 	RDB       Redis `mapstructure:"redis"`
 }
@@ -34,6 +35,12 @@ type Logger struct {
 	MaxBackups int    `mapstructure:"max_backups"`
 	Layout     string `mapstructure:"layout"`
 	Filename   string `mapstructure:"filename"`
+}
+
+type Ffmpeg struct {
+	FfmpegPath    string `mapstructure:"ffmpeg_path"`
+	PublicPath    string `mapstructure:"public_path"`
+	PublicPicPath string `mapstructure:"public_pic_path"`
 }
 
 type Mysql struct {

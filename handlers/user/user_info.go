@@ -2,6 +2,7 @@ package user
 
 import (
 	"douyin/handlers/common"
+	"douyin/models"
 	"douyin/pkg/e"
 	"douyin/service/user"
 	"net/http"
@@ -14,7 +15,7 @@ import (
 
 type InfoResponse struct {
 	common.Response
-	*user.InfoResponse `json:"user"`
+	*models.User `json:"user"`
 }
 
 func InfoHandler(c *gin.Context) {
@@ -32,14 +33,14 @@ func InfoHandler(c *gin.Context) {
 		common.FailWithCode(c, e.FailParamInvalid)
 		return
 	}
-	var infoResponse *user.InfoResponse
-	if infoResponse, err = user.Info(uid, tkUid); err != nil {
+	var userResponse *models.User
+	if userResponse, err = user.Info(uid, tkUid); err != nil {
 		zap.L().Error("handlers user_info InfoHandler Info method exec fail", zap.Error(err))
 		common.FailWithMsg(c, err.Error())
 		return
 	}
 	c.JSON(http.StatusOK, InfoResponse{
 		common.Response{StatusCode: 0},
-		infoResponse,
+		userResponse,
 	})
 }

@@ -15,6 +15,7 @@ type User struct {
 	WorkCount       int64  `json:"work_count" db:"work_count"`
 	FavorCount      int64  `json:"favorite_count" db:"favor_count"`
 	TotalFavorCount int64  `json:"total_favorited,string" db:"total_favor_count"`
+	IsFollow        bool   `json:"is_follow"`
 	Username        string `json:"name" db:"username"`
 	Password        string `json:"password,omitempty" db:"password"`
 	Avatar          string `json:"avatar" db:"avatar"`
@@ -79,6 +80,24 @@ func (*UserDao) QueryUserInfoById(user *User, userId int64) (err error) {
        from users where user_id = ?`
 	if err = db.GetContext(ctx, user, qStr, userId); err != nil {
 		zap.L().Error("models QueryUserInfoById method exec fail!", zap.Error(err))
+	}
+	return
+}
+
+// AddUserWorks 添加用户作品数量
+func (*UserDao) AddUserWorks(userId int64) (err error) {
+	uStr := `update users set work_count = work_count + 1 where user_id = ?`
+	if _, err = db.ExecContext(ctx, uStr, userId); err != nil {
+		zap.L().Error("models user ExecContext method exec fail!", zap.Error(err))
+	}
+	return
+}
+
+// QueryUserFavorVideos 查询用户的点赞视频数量
+func (*UserDao) QueryUserFavorVideos(userId int64) (favors int64, err error) {
+	qStr := `select favor_count from users where user_id = ?`
+	if err = db.GetContext(ctx, &favors, qStr, userId); err != nil {
+		zap.L().Error("models user GetContext method exec fail!", zap.Error(err))
 	}
 	return
 }

@@ -5,6 +5,8 @@ import (
 	"douyin/conf"
 	"fmt"
 
+	"go.uber.org/zap"
+
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 )
@@ -21,6 +23,7 @@ func InitMysql() {
 		conf.Conf.MDB.Dbname)
 	var err error
 	if db, err = sqlx.Connect("mysql", dsn); err != nil {
+		zap.L().Debug("mysql dsn", zap.String("dsn", dsn))
 		panic(fmt.Errorf("mysql connect fail, err: %s", err))
 	}
 	// 配置连接池,最大空闲连接数,最大同时连接数

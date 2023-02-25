@@ -1,8 +1,10 @@
 package consts
 
 const (
-	MaxUsernameLimit     = 32 // 最大用户名长度限制
-	MaxUserPasswordLimit = 20 // 最大用户密码长度限制
+	MaxUsernameLimit     = 32  // 最大用户名长度限制
+	MaxUserPasswordLimit = 20  // 最大用户密码长度限制
+	MaxVideoTileLimit    = 200 // 最大用户密码长度限制
+	MaxFeedVideos        = 10  // 最大Feed取出视频条数
 
 	JWTTokenExpiredAt = 30 * 24 * 60 * 60 // token过期时间 30天
 	JWTDouyin         = "douyin"          // 项目名称
@@ -22,4 +24,15 @@ const (
 	CacheSetUserFollower  = "set_user_follower:"  // Set存储, 用户粉丝列表: key: userId, val: toUserId...
 	CacheSetVideoComment  = "set_video_comment:"  // Set存储, 视频评论列表: key: videoId, val: commentId...
 	CacheStringVideoFavor = "string_video_favor:" // String存储, 视频被点赞次数: key: videoId, val: favors
+
+	// ffmpeg的参数
+	OptionInputVideoPath = "-i"
+	OptionStartTime      = "-ss"
+	OptionKeepTime       = "-t"
+	OptionVideoFilter    = "-vf"
+	OptionFormatToImage  = "-f"
+	OptionAutoReWrite    = "-y"
+	OptionFrames         = "-frames:v"
+	DefaultVideoSuffix   = ".mp4"
+	DefaultImageSuffix   = ".jpg"
 )
