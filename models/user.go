@@ -93,6 +93,24 @@ func (*UserDao) AddUserWorks(userId int64) (err error) {
 	return
 }
 
+// QueryUserFollows 获取用户关注数
+func (*UserDao) QueryUserFollows(userId int64) (follows int64, err error) {
+	qStr := `select follow_count from users where user_id = ?`
+	if err = db.GetContext(ctx, &follows, qStr, userId); err != nil {
+		zap.L().Error("models user GetContext method exec fail!", zap.Error(err))
+	}
+	return
+}
+
+// QueryUserFollowers 获取用户粉丝数
+func (*UserDao) QueryUserFollowers(userId int64) (followers int64, err error) {
+	qStr := `select follower_count from users where user_id = ?`
+	if err = db.GetContext(ctx, &followers, qStr, userId); err != nil {
+		zap.L().Error("models user GetContext method exec fail!", zap.Error(err))
+	}
+	return
+}
+
 // QueryUserFavorVideos 查询用户的点赞视频数量
 func (*UserDao) QueryUserFavorVideos(userId int64) (favors int64, err error) {
 	qStr := `select favor_count from users where user_id = ?`

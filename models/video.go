@@ -97,6 +97,15 @@ func (*VideoDao) QueryVideoList(videos []*Video) (err error) {
 	return
 }
 
+// QueryVideoCommentsById 根据id查询视频评论数
+func (*VideoDao) QueryVideoCommentsById(videoId int64) (comments int64, err error) {
+	qStr := `select comment_count from videos where video_id = ?`
+	if err = db.GetContext(ctx, &comments, qStr, videoId); err != nil {
+		zap.L().Error("models video GetContext method exec fail!", zap.Error(err))
+	}
+	return
+}
+
 // IsExistVideoById 判断该视频是否存在
 func (*VideoDao) IsExistVideoById(videoId int64) (bool, error) {
 	qStr := `select is_delete from videos where video_id = ?`

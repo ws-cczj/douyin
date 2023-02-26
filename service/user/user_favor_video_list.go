@@ -18,7 +18,7 @@ func NewFavorVideoListFlow(userId, tkUserId int64) *FavorVideoListFlow {
 
 type FavorVideoListFlow struct {
 	userId, tkUserId int64
-	videos           []*models.Video
+	data             []*models.Video
 }
 
 func (f *FavorVideoListFlow) Do() ([]*models.Video, error) {
@@ -28,7 +28,7 @@ func (f *FavorVideoListFlow) Do() ([]*models.Video, error) {
 	if err := f.prepareData(); err != nil {
 		return nil, err
 	}
-	return f.videos, nil
+	return f.data, nil
 }
 
 func (f *FavorVideoListFlow) checkNum() error {
@@ -52,12 +52,12 @@ func (f *FavorVideoListFlow) prepareData() (err error) {
 	if favors == 0 {
 		return
 	}
-	f.videos = make([]*models.Video, favors)
-	if err = models.NewVideoDao().QueryVideoListWithFavors(f.videos, f.userId); err != nil {
+	f.data = make([]*models.Video, favors)
+	if err = models.NewVideoDao().QueryVideoListWithFavors(f.data, f.userId); err != nil {
 		zap.L().Error("service user_favor_video_list QueryVideoListWithFavors method exec fail!", zap.Error(err))
 	}
 	// 2. 根据视频进行遍历搜索
-	for _, video := range f.videos {
+	for _, video := range f.data {
 		// 通过id查询用户信息
 		video.Author = new(models.User)
 		if err = models.NewUserDao().QueryUserInfoById(video.Author, video.UserId); err != nil {
@@ -69,8 +69,8 @@ func (f *FavorVideoListFlow) prepareData() (err error) {
 		return
 	}
 	var wg sync.WaitGroup
-	wg.Add(len(f.videos))
-	for _, video := range f.videos {
+	wg.Add(len(f.data))
+	for _, video := range f.data {
 		vdo := video
 		go func() {
 			// 判断用户关系

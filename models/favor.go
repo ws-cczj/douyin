@@ -2,7 +2,6 @@ package models
 
 import (
 	"database/sql"
-	"database/sql/driver"
 	"douyin/pkg/utils"
 	"errors"
 	"sync"
@@ -13,14 +12,9 @@ import (
 )
 
 type Favor struct {
-	IsFavor int   `json:"is_favor"`
 	Id      int64 `json:"id"`
 	UserId  int64 `json:"user_id"`
 	VideoId int64 `json:"video_id"`
-}
-
-func (f Favor) Value() (driver.Value, error) {
-	return []interface{}{f.VideoId, f.IsFavor}, nil
 }
 
 type FavorDao struct {
@@ -107,7 +101,9 @@ func (*FavorDao) AddUserFavorVideoInfoById(userId, videoId int64, isFavor int) (
 		wg.Wait()
 	}
 	if err != nil {
-		tx.Rollback()
+		if tx != nil {
+			tx.Rollback()
+		}
 		return
 	}
 	if err = tx.Commit(); err != nil {
@@ -156,19 +152,19 @@ func (*FavorDao) SubUserFavorsInfoById(userId, videoId int64, isFavor int) (err 
 			}
 			wg.Done()
 		}()
-		switch isFavor {
-		case 1:
-			uStr := `update user_favor_videos set is_favor = ? where user_id = ? AND video_id = ?`
-			if _, err = tx.ExecContext(ctx, uStr, 0, userId, videoId); err != nil {
-				zap.L().Error("models favor UpdateFavorData To table fail!", zap.Error(err))
-			}
-		default:
+		if isFavor != 1 {
 			err = errors.New("不规范操作")
+		}
+		uStr := `update user_favor_videos set is_favor = ? where user_id = ? AND video_id = ?`
+		if _, err = tx.ExecContext(ctx, uStr, 0, userId, videoId); err != nil {
+			zap.L().Error("models favor UpdateFavorData To table fail!", zap.Error(err))
 		}
 		wg.Wait()
 	}
 	if err != nil {
-		tx.Rollback()
+		if tx != nil {
+			tx.Rollback()
+		}
 		return
 	}
 	if err = tx.Commit(); err != nil {

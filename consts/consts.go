@@ -3,7 +3,8 @@ package consts
 const (
 	MaxUsernameLimit     = 32  // 最大用户名长度限制
 	MaxUserPasswordLimit = 20  // 最大用户密码长度限制
-	MaxVideoTileLimit    = 200 // 最大用户密码长度限制
+	MaxVideoTileLimit    = 200 // 最大视频标题长度限制
+	MaxCommentLenLimit   = 500 // 最大评论长度限制
 	MaxFeedVideos        = 10  // 最大Feed取出视频条数
 
 	JWTTokenExpiredAt = 30 * 24 * 60 * 60 // token过期时间 30天

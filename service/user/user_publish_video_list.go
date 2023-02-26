@@ -18,7 +18,7 @@ func NewPublishVideoListFlow(userId, tkUserId int64) *PublishVideoListFlow {
 
 type PublishVideoListFlow struct {
 	userId, tkUserId int64
-	videos           []*models.Video
+	data             []*models.Video
 }
 
 func (p *PublishVideoListFlow) Do() ([]*models.Video, error) {
@@ -28,7 +28,7 @@ func (p *PublishVideoListFlow) Do() ([]*models.Video, error) {
 	if err := p.prepareData(); err != nil {
 		return nil, err
 	}
-	return p.videos, nil
+	return p.data, nil
 }
 
 func (p *PublishVideoListFlow) checkNum() error {
@@ -44,21 +44,21 @@ func (p *PublishVideoListFlow) prepareData() (err error) {
 		zap.L().Error("service user_video_list QueryUserInfoById method exec fail!", zap.Error(err))
 		return
 	}
-	p.videos = make([]*models.Video, user.WorkCount)
-	if err = models.NewVideoDao().QueryUserVideoListById(p.videos, p.userId); err != nil {
+	p.data = make([]*models.Video, user.WorkCount)
+	if err = models.NewVideoDao().QueryUserVideoListById(p.data, p.userId); err != nil {
 		zap.L().Error("service user_video_list QueryUserVideoListById method exec fail!", zap.Error(err))
 		return
 	}
 	// 如果是游客访问
 	if p.tkUserId == 0 {
-		for _, video := range p.videos {
+		for _, video := range p.data {
 			video.Author = user
 		}
 		return
 	}
 	var wg sync.WaitGroup
-	wg.Add(len(p.videos))
-	for _, video := range p.videos {
+	wg.Add(len(p.data))
+	for _, video := range p.data {
 		vdo := video
 		go func() {
 			vdo.Author = user
