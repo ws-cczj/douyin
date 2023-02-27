@@ -52,12 +52,12 @@ func (*RelationDao) QueryUserFollowList(user []*User, userId int64) (err error) 
                                     from user_relations
                                     where user_id = ? AND is_follow = ?)`
 	if err = db.SelectContext(ctx, &user, qStr, userId, 1); err != nil {
-		zap.L().Error("models relation SelectContext method exec fail!", zap.Error(err))
+		zap.L().Error("models relation follow data query fail!", zap.Error(err))
 	}
 	return
 }
 
-// QueryUserFollowerList 查询用户的关注列表
+// QueryUserFollowerList 查询用户的粉丝列表
 func (*RelationDao) QueryUserFollowerList(user []*User, toUserId int64) (err error) {
 	qStr := `select user_id,username,avatar,background_image,signature,
        follow_count,follower_count,work_count,favor_count,total_favor_count
@@ -65,13 +65,26 @@ func (*RelationDao) QueryUserFollowerList(user []*User, toUserId int64) (err err
                                     from user_relations
                                     where to_user_id = ? AND is_follow = ?)`
 	if err = db.SelectContext(ctx, &user, qStr, toUserId, 1); err != nil {
-		zap.L().Error("models relation SelectContext method exec fail!", zap.Error(err))
+		zap.L().Error("models relation follower data query fail!", zap.Error(err))
+	}
+	return
+}
+
+// QueryUserFriendsList 查询用户朋友列表
+func (*RelationDao) QueryUserFriendsList(user []*User, userId int64) (err error) {
+	qStr := `select user_id,username,avatar,background_image,signature,
+       follow_count,follower_count,work_count,favor_count,total_favor_count
+       from users where user_id in (select to_user_id 
+                                    from user_relations
+                                    where user_id = ? AND is_friend = 1)`
+	if err = db.SelectContext(ctx, &user, qStr, userId); err != nil {
+		zap.L().Error("models relation friend data query fail!", zap.Error(err))
 	}
 	return
 }
 
 // Action1UserRelation 动态处理用户关系
-func (*RelationDao) Action1UserRelation(userId, toUserId int64, isFollow, isFriend int) (err error) {
+func (*RelationDao) Action1UserRelation(userId, toUserId int64, isFollow, isFollower int) (err error) {
 	var tx *sql.Tx
 	if tx, err = db.Begin(); err == nil {
 		if tx == nil {
@@ -84,42 +97,42 @@ func (*RelationDao) Action1UserRelation(userId, toUserId int64, isFollow, isFrie
 		// 要么该关系不存在，要么该关系为未成立
 		if isFollow == -1 {
 			go func() {
+				defer wg.Done()
 				iStr := `insert into user_relations(user_id,to_user_id,is_friend) values (?,?,?)`
-				if _, err = tx.ExecContext(ctx, iStr, userId, toUserId, isFriend); err != nil {
+				if _, err = tx.ExecContext(ctx, iStr, userId, toUserId, isFollower); err != nil {
 					zap.L().Error("models relation AddUserRelation exec fail!", zap.Error(err))
 				}
-				wg.Done()
 			}()
 		} else {
 			go func() {
-				uStr := `update user_relations set is_follow = ? where user_id = ?`
-				if _, err = tx.ExecContext(ctx, uStr, 1, userId); err != nil {
+				defer wg.Done()
+				uStr := `update user_relations set is_follow = 1, is_friend = ? where user_id = ? AND to_user_id = ?`
+				if _, err = tx.ExecContext(ctx, uStr, isFollower, userId, toUserId); err != nil {
 					zap.L().Error("models relation UpdateUserRelation exec fail!", zap.Error(err))
 				}
-				wg.Done()
 			}()
 		}
 		// 更新用户表信息
 		go func() {
+			defer wg.Done()
 			uStr := `update users set follow_count = follow_count + 1 where user_id = ?`
 			if _, err = tx.ExecContext(ctx, uStr, userId); err != nil {
 				zap.L().Error("models relation UpdateUserFollow exec fail!", zap.Error(err))
 			}
-			wg.Done()
 		}()
 		go func() {
+			defer wg.Done()
 			uStr := `update users set follower_count = follower_count + 1 where user_id = ?`
 			if _, err = tx.ExecContext(ctx, uStr, toUserId); err != nil {
 				zap.L().Error("models relation UpdateUserFollower exec fail!", zap.Error(err))
 			}
-			wg.Done()
 		}()
 		// 判断是否需要更新朋友关系
-		if isFriend == 1 {
+		if isFollower == 1 {
 			uStr := `update user_relations 
 						set is_friend = ?
-                      	where to_user_id = ? AND user_id = ?`
-			if _, err = tx.ExecContext(ctx, uStr, isFriend, toUserId, userId); err != nil {
+                      	where user_id = ? AND to_user_id = ?`
+			if _, err = tx.ExecContext(ctx, uStr, isFollower, toUserId, userId); err != nil {
 				zap.L().Error("models relation AddUserRelation exec fail!", zap.Error(err))
 			}
 		}
@@ -139,7 +152,7 @@ func (*RelationDao) Action1UserRelation(userId, toUserId int64, isFollow, isFrie
 }
 
 // Action2UserRelation 移除用户关系
-func (*RelationDao) Action2UserRelation(userId, toUserId int64, isFollow, isFriend int) (err error) {
+func (*RelationDao) Action2UserRelation(userId, toUserId int64, isFollow, isFollower int) (err error) {
 	var tx *sql.Tx
 	if tx, err = db.Begin(); err == nil {
 		if tx == nil {
@@ -150,30 +163,30 @@ func (*RelationDao) Action2UserRelation(userId, toUserId int64, isFollow, isFrie
 		var wg sync.WaitGroup
 		wg.Add(3)
 		go func() {
-			uStr := `update user_relations set is_follow = 0 AND is_friend = 0 where user_id = ? AND to_user_id = ?`
+			defer wg.Done()
+			uStr := `update user_relations set is_follow = 0, is_friend = 0 where user_id = ? AND to_user_id = ?`
 			if _, err = tx.ExecContext(ctx, uStr, userId, toUserId); err != nil {
 				zap.L().Error("models relation UpdateRelation exec fail!", zap.Error(err))
 			}
-			wg.Done()
 		}()
 		go func() {
+			defer wg.Done()
 			uStr := `update users set follow_count = follow_count - 1 where user_id = ?`
 			if _, err = tx.ExecContext(ctx, uStr, userId); err != nil {
 				zap.L().Error("models relation UpdateUserFollow exec fail!", zap.Error(err))
 			}
-			wg.Done()
 		}()
 		go func() {
+			defer wg.Done()
 			uStr := `update users set follower_count = follower_count - 1 where user_id = ?`
 			if _, err = tx.ExecContext(ctx, uStr, toUserId); err != nil {
 				zap.L().Error("models relation UpdateUserFollower exec fail!", zap.Error(err))
 			}
-			wg.Done()
 		}()
-		if isFriend == 1 {
+		if isFollower == 1 {
 			uStr := `update user_relations 
 						set is_friend = ?
-                      	where to_user_id = ? AND user_id = ?`
+                      	where user_id = ? AND to_user_id = ?`
 			if _, err = tx.ExecContext(ctx, uStr, 0, toUserId, userId); err != nil {
 				zap.L().Error("models relation SubUserRelation exec fail!", zap.Error(err))
 			}
@@ -189,6 +202,15 @@ func (*RelationDao) Action2UserRelation(userId, toUserId int64, isFollow, isFrie
 	if err = tx.Commit(); err != nil {
 		zap.L().Error("models relation tx Commit exec fail!", zap.Error(err))
 		tx.Rollback()
+	}
+	return
+}
+
+// QueryUserFriendsById 根据id查询朋友数目
+func (*RelationDao) QueryUserFriendsById(userId int64) (friends int64, err error) {
+	qStr := `select Count(*) from user_relations where user_id = ? AND is_friend = 1`
+	if err = db.GetContext(ctx, &friends, qStr, userId); err != nil {
+		zap.L().Error("models relation query userFriends fail!", zap.Error(err))
 	}
 	return
 }

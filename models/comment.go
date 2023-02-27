@@ -44,12 +44,12 @@ func (c *CommentDao) PublishVideoComment(userId, videoId int64, content string) 
 		var wg sync.WaitGroup
 		wg.Add(1)
 		go func() {
+			defer wg.Done()
 			// 增加视频的评论数量
 			uStr := `update videos set comment_count = comment_count + 1 where video_id = ?`
 			if _, err = tx.ExecContext(ctx, uStr, videoId); err != nil {
 				zap.L().Error("models comment incr comment fail!", zap.Error(err))
 			}
-			wg.Done()
 		}()
 		// 增加一条评论
 		iStr := `insert into video_comments(user_id,video_id,content) values (?,?,?)`
@@ -83,12 +83,12 @@ func (c *CommentDao) DeleteVideoComment(videoId, commentId int64) (err error) {
 		var wg sync.WaitGroup
 		wg.Add(1)
 		go func() {
+			defer wg.Done()
 			// 删除一条评论
 			dStr := `delete from video_comments where id = ?`
 			if _, err = tx.ExecContext(ctx, dStr, commentId); err != nil {
 				zap.L().Error("models comment delete comment fail!", zap.Error(err))
 			}
-			wg.Done()
 		}()
 		// 减少视频的评论数量
 		uStr := `update videos set comment_count = comment_count - 1 where video_id = ?`

@@ -80,6 +80,7 @@ func (u *UserRelationListFlow) packData() (err error) {
 	for _, data := range u.data {
 		user := data
 		go func() {
+			defer wg.Done()
 			var isFollow int
 			if isFollow, err = models.NewRelationDao().IsExistRelation(u.tkUserId, user.UserId); err != nil {
 				zap.L().Error("service relation_user_list IsExistRelation method exec fail!", zap.Error(err))
@@ -87,7 +88,6 @@ func (u *UserRelationListFlow) packData() (err error) {
 			if isFollow == 1 {
 				user.IsFollow = true
 			}
-			wg.Done()
 		}()
 	}
 	return

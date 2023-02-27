@@ -61,6 +61,7 @@ func (p *PublishVideoListFlow) prepareData() (err error) {
 	for _, video := range p.data {
 		vdo := video
 		go func() {
+			defer wg.Done()
 			vdo.Author = user
 			if p.tkUserId != p.userId {
 				var isFollow int
@@ -78,7 +79,6 @@ func (p *PublishVideoListFlow) prepareData() (err error) {
 			if isFavor == 1 {
 				vdo.IsFavor = true
 			}
-			wg.Done()
 		}()
 	}
 	wg.Wait()

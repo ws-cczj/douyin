@@ -36,7 +36,7 @@ func (u *UserFollowFlow) checkNum() (err error) {
 		return errors.New("不能关注自己")
 	}
 	if u.userId == 0 || u.toUserId == 0 {
-		return errors.New("无效操作")
+		return errors.New("服务繁忙")
 	}
 	if u.isFollow, err = models.NewRelationDao().IsExistRelation(u.userId, u.toUserId); err != nil {
 		zap.L().Error("service relation_follow IsExistRelation method exec fail!", zap.Error(err))
@@ -57,6 +57,8 @@ func (u *UserFollowFlow) updateData() (err error) {
 	if u.isFollower != 1 {
 		u.isFollower = 0
 	}
+	// 此时isFollow 有两种情况, 不存在 -1, 存在但未成立 0.
+	// isFollower有两种情况, 不存在或未成立 0, 成立 1.
 	if err = models.NewRelationDao().Action1UserRelation(u.userId, u.toUserId, u.isFollow, u.isFollower); err != nil {
 		zap.L().Error("service relation_follow Action1UserRelation method exec fail!", zap.Error(err))
 	}

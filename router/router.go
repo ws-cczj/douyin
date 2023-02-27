@@ -37,6 +37,7 @@ func InitRouter(r *gin.Engine) {
 		v1.Use(middleware.Auth())
 		{
 			v1.GET("/user/", user.InfoHandler)
+			v1.GET("/relation/friend/list", relation.UserFriendListHandler)
 			v1.POST("/publish/action/", middleware.Ffmpeg(true), video.PublishHandler)
 			v1.POST("/favorite/action/", favor.VideoFavorHandler)
 			v1.POST("/comment/action/", comment.VideoCommentHandler)

@@ -56,15 +56,16 @@ func (*FavorDao) AddUserFavorVideoInfoById(userId, videoId int64, isFavor int) (
 		var wg sync.WaitGroup
 		wg.Add(3)
 		go func() {
+			defer wg.Done()
 			// 将用户点赞进行数+1
 			uStr := `update users set favor_count = favor_count + 1 where user_id = ?`
 			if _, err = tx.ExecContext(ctx, uStr, userId); err != nil {
 				zap.L().Error("models favor AddFavorCount exec fail!", zap.Error(err))
 			}
-			wg.Done()
 		}()
 		go func() {
 			// 将用户被点赞数进行+1
+			defer wg.Done()
 			uStr := `update users
 				set total_favor_count = total_favor_count + 1
 				where user_id = (
@@ -74,15 +75,14 @@ func (*FavorDao) AddUserFavorVideoInfoById(userId, videoId int64, isFavor int) (
 			if _, err = tx.ExecContext(ctx, uStr, videoId); err != nil {
 				zap.L().Error("models favor AddTotalFavors exec fail!", zap.Error(err))
 			}
-			wg.Done()
 		}()
 		go func() {
 			// 将视频被点赞数进行+1
+			defer wg.Done()
 			uStr := `update videos set favored_count = favored_count + 1 where video_id = ?`
 			if _, err = tx.ExecContext(ctx, uStr, videoId); err != nil {
 				zap.L().Error("models favor AddVideoFavored To Table fail!", zap.Error(err))
 			}
-			wg.Done()
 		}()
 		switch isFavor {
 		case -1:
@@ -125,14 +125,15 @@ func (*FavorDao) SubUserFavorsInfoById(userId, videoId int64, isFavor int) (err 
 		wg.Add(3)
 		go func() {
 			// 将用户点赞进行-1
+			defer wg.Done()
 			uStr := `update users set favor_count = favor_count - 1 where user_id = ?`
 			if _, err = tx.ExecContext(ctx, uStr, userId); err != nil {
 				zap.L().Error("models favor SubFavorCount exec fail!", zap.Error(err))
 			}
-			wg.Done()
 		}()
 		go func() {
 			// 将用户被点赞进行-1
+			defer wg.Done()
 			uStr := `update users
 				set total_favor_count = total_favor_count - 1
 				where user_id = (
@@ -142,15 +143,14 @@ func (*FavorDao) SubUserFavorsInfoById(userId, videoId int64, isFavor int) (err 
 			if _, err = tx.ExecContext(ctx, uStr, videoId); err != nil {
 				zap.L().Error("models favor SubTotalFavorCount exec fail!", zap.Error(err))
 			}
-			wg.Done()
 		}()
 		go func() {
 			// 将视频被点赞数进行-1
+			defer wg.Done()
 			uStr := `update videos set favored_count = favored_count - 1 where video_id = ?`
 			if _, err = tx.ExecContext(ctx, uStr, videoId); err != nil {
 				zap.L().Error("models favor AddVideoFavored To Table fail!", zap.Error(err))
 			}
-			wg.Done()
 		}()
 		if isFavor != 1 {
 			err = errors.New("不规范操作")

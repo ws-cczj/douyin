@@ -1,7 +1,9 @@
 package models
 
 import (
+	"database/sql"
 	"douyin/consts"
+	"errors"
 	"sync"
 	"time"
 
@@ -39,9 +41,38 @@ func NewVideoDao() *VideoDao {
 
 // PublishVideo 发布一条视频
 func (*VideoDao) PublishVideo(videoId, userId int64, playUrl, coverUrl, title string) (err error) {
-	iStr := `insert into videos(video_id,user_id,title,play_url,cover_url) values (?,?,?,?,?)`
-	if _, err = db.ExecContext(ctx, iStr, videoId, userId, title, playUrl, coverUrl); err != nil {
-		zap.L().Error("models video ExecContext method exec fail!", zap.Error(err))
+	var tx *sql.Tx
+	if tx, err = db.Begin(); err == nil {
+		if tx == nil {
+			zap.L().Error("models relation begin tx transition fail!", zap.Error(err))
+			return errors.New("服务繁忙")
+		}
+		var wg sync.WaitGroup
+		wg.Add(1)
+		// 增加一条视频
+		go func() {
+			defer wg.Done()
+			iStr := `insert into videos(video_id,user_id,title,play_url,cover_url) values (?,?,?,?,?)`
+			if _, err = db.ExecContext(ctx, iStr, videoId, userId, title, playUrl, coverUrl); err != nil {
+				zap.L().Error("models video ExecContext method exec fail!", zap.Error(err))
+			}
+		}()
+		// 增加用户视频数
+		uStr := `update users set work_count = work_count + 1 where user_id = ?`
+		if _, err = db.ExecContext(ctx, uStr, userId); err != nil {
+			zap.L().Error("models video Update User videos fail!", zap.Error(err))
+		}
+		wg.Wait()
+	}
+	if err != nil {
+		if tx != nil {
+			tx.Rollback()
+		}
+		return
+	}
+	if err = tx.Commit(); err != nil {
+		zap.L().Error("models video tx Commit exec fail!", zap.Error(err))
+		tx.Rollback()
 	}
 	return
 }

@@ -74,6 +74,7 @@ func (f *FavorVideoListFlow) prepareData() (err error) {
 		vdo := video
 		go func() {
 			// 判断用户关系
+			defer wg.Done()
 			if f.tkUserId != vdo.UserId {
 				var isFollow int
 				if isFollow, err = models.NewRelationDao().IsExistRelation(f.tkUserId, vdo.UserId); err != nil {
@@ -90,7 +91,6 @@ func (f *FavorVideoListFlow) prepareData() (err error) {
 			if isFavor == 1 {
 				vdo.IsFavor = true
 			}
-			wg.Done()
 		}()
 	}
 	wg.Wait()

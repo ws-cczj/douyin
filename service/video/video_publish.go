@@ -44,7 +44,6 @@ func (p *PublishFlow) check() error {
 
 func (p *PublishFlow) publish() (err error) {
 	videoId := utils.GenID()
-	go models.NewUserDao().AddUserWorks(p.userId)
 	if err = models.NewVideoDao().PublishVideo(videoId, p.userId, p.playUrl, p.coverUrl, p.title); err != nil {
 		zap.L().Error("service video_publish PublishVideo method exec fail!", zap.Error(err))
 	}

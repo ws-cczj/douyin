@@ -51,6 +51,7 @@ func (u *UserCancelFollowFlow) updateData() (err error) {
 		zap.L().Error("service relation_follow IsExistRelation method exec fail!", zap.Error(err))
 		return
 	}
+	// 此时isFollow 只能为 1, isFollower有三种情况: 不存在关系 -1, 存在但未成立 0, 存在并且成立 1
 	if err = models.NewRelationDao().Action2UserRelation(u.userId, u.toUserId, u.isFollow, u.isFollower); err != nil {
 		zap.L().Error("service relation_follow Action2UserRelation method exec fail!", zap.Error(err))
 	}

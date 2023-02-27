@@ -72,3 +72,21 @@ func UserFollowerListHandler(c *gin.Context) {
 		list,
 	})
 }
+
+// UserFriendListHandler 用户朋友列表
+func UserFriendListHandler(c *gin.Context) {
+	userIdStr := c.Query("user_id")
+	userId := utils.AtoI64(userIdStr)
+	list, err := relation.UserFriendList(userId)
+	if err != nil {
+		zap.L().Error("handlers relation_user_list UserFriendListHandler method exec fail!", zap.Error(err))
+		common.FailWithMsg(c, err.Error())
+		return
+	}
+	c.JSON(http.StatusOK, UserListResponse{
+		common.Response{
+			StatusCode: 0,
+		},
+		list,
+	})
+}

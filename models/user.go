@@ -84,15 +84,6 @@ func (*UserDao) QueryUserInfoById(user *User, userId int64) (err error) {
 	return
 }
 
-// AddUserWorks 添加用户作品数量
-func (*UserDao) AddUserWorks(userId int64) (err error) {
-	uStr := `update users set work_count = work_count + 1 where user_id = ?`
-	if _, err = db.ExecContext(ctx, uStr, userId); err != nil {
-		zap.L().Error("models user ExecContext method exec fail!", zap.Error(err))
-	}
-	return
-}
-
 // QueryUserFollows 获取用户关注数
 func (*UserDao) QueryUserFollows(userId int64) (follows int64, err error) {
 	qStr := `select follow_count from users where user_id = ?`

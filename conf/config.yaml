@@ -1,7 +1,8 @@
 server:
   mode: "debug"
-#  mode: "release"
   ip: "192.168.43.219"
+  #  mode: "release"
+  #  ip: "192.168.70.105"
   port: 8080
 snowflake:
   start_at: "2023-02-01"

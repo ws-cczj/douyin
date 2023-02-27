@@ -68,6 +68,7 @@ func (c *CommentListFlow) packData() (err error) {
 	for _, comment := range c.data {
 		ct := comment
 		go func() {
+			defer wg.Done()
 			var isFollow int
 			if isFollow, err = models.NewRelationDao().IsExistRelation(c.userId, ct.User.UserId); err != nil {
 				zap.L().Error("service video_comment_list IsExistRelation method exec fail!", zap.Error(err))
@@ -76,7 +77,6 @@ func (c *CommentListFlow) packData() (err error) {
 				ct.User.IsFollow = true
 			}
 			ct.CreateAt = utils.FormatTime(ct.CreateTime)
-			wg.Done()
 		}()
 	}
 	wg.Wait()
