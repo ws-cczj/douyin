@@ -2,7 +2,7 @@ package video
 
 import (
 	"douyin/consts"
-	"douyin/models"
+	models2 "douyin/database/models"
 	"errors"
 	"time"
 
@@ -10,8 +10,8 @@ import (
 )
 
 type FeedResponse struct {
-	NextTime int64           `json:"next_time"`
-	Videos   []*models.Video `json:"video_list"`
+	NextTime int64            `json:"next_time"`
+	Videos   []*models2.Video `json:"video_list"`
 }
 
 func UserFeed(lastTime, userId int64) (*FeedResponse, error) {
@@ -19,7 +19,7 @@ func UserFeed(lastTime, userId int64) (*FeedResponse, error) {
 }
 
 func NewVideoUserFeedFlow(lastTime, userId int64) *UserFeedFlow {
-	return &UserFeedFlow{lastTime: lastTime, userId: userId, videos: make([]*models.Video, consts.MaxFeedVideos)}
+	return &UserFeedFlow{lastTime: lastTime, userId: userId, videos: make([]*models2.Video, consts.MaxFeedVideos)}
 }
 
 type UserFeedFlow struct {
@@ -27,7 +27,7 @@ type UserFeedFlow struct {
 	userId   int64
 
 	nextTime int64
-	videos   []*models.Video
+	videos   []*models2.Video
 
 	data *FeedResponse
 }
@@ -58,12 +58,12 @@ func (u *UserFeedFlow) checkNum() error {
 
 func (u *UserFeedFlow) prepareData() (err error) {
 	// 1. 根据时间查询数据库中视频条数
-	if err = models.NewVideoDao().QueryVideoListByTime(u.videos, u.lastTime); err != nil {
+	if err = models2.NewVideoDao().QueryVideoListByTime(u.videos, u.lastTime); err != nil {
 		zap.L().Error("service video_user_feed QueryVideoListByTime method exec fail!", zap.Error(err))
 		return err
 	}
 	if u.videos[0] == nil {
-		if err = models.NewVideoDao().QueryVideoList(u.videos); err != nil {
+		if err = models2.NewVideoDao().QueryVideoList(u.videos); err != nil {
 			zap.L().Error("service video_user_feed QueryVideoList method exec fail!", zap.Error(err))
 			return err
 		}
@@ -75,15 +75,15 @@ func (u *UserFeedFlow) prepareData() (err error) {
 			break
 		}
 		// 通过id查询用户信息
-		video.Author = new(models.User)
-		if err = models.NewUserDao().QueryUserInfoById(video.Author, video.UserId); err != nil {
+		video.Author = new(models2.User)
+		if err = models2.NewUserDao().QueryUserInfoById(video.Author, video.UserId); err != nil {
 			zap.L().Error("service video_user_feed QueryUserInfoById method exec fail!", zap.Error(err))
 			continue
 		}
 		// 判断用户关系
 		if u.userId != video.UserId {
 			var isFollow int
-			if isFollow, err = models.NewRelationDao().IsExistRelation(u.userId, video.UserId); err != nil {
+			if isFollow, err = models2.NewRelationDao().IsExistRelation(u.userId, video.UserId); err != nil {
 				zap.L().Error("service video_user_feed NewRelationDao method exec fail!", zap.Error(err))
 				continue
 			}
@@ -92,7 +92,7 @@ func (u *UserFeedFlow) prepareData() (err error) {
 			}
 		}
 		var isFavor int
-		if isFavor, err = models.NewFavorDao().IsExistFavor(u.userId, video.VideoId); err != nil {
+		if isFavor, err = models2.NewFavorDao().IsExistFavor(u.userId, video.VideoId); err != nil {
 			zap.L().Error("service video_user_feed IsExistFavor method exec fail!", zap.Error(err))
 			continue
 		}

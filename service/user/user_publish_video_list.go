@@ -1,14 +1,14 @@
 package user
 
 import (
-	"douyin/models"
+	models2 "douyin/database/models"
 	"errors"
 	"sync"
 
 	"go.uber.org/zap"
 )
 
-func PublishVideoList(userId, tkUserId int64) ([]*models.Video, error) {
+func PublishVideoList(userId, tkUserId int64) ([]*models2.Video, error) {
 	return NewPublishVideoListFlow(userId, tkUserId).Do()
 }
 
@@ -18,10 +18,10 @@ func NewPublishVideoListFlow(userId, tkUserId int64) *PublishVideoListFlow {
 
 type PublishVideoListFlow struct {
 	userId, tkUserId int64
-	data             []*models.Video
+	data             []*models2.Video
 }
 
-func (p *PublishVideoListFlow) Do() ([]*models.Video, error) {
+func (p *PublishVideoListFlow) Do() ([]*models2.Video, error) {
 	if err := p.checkNum(); err != nil {
 		return nil, err
 	}
@@ -39,13 +39,13 @@ func (p *PublishVideoListFlow) checkNum() error {
 }
 func (p *PublishVideoListFlow) prepareData() (err error) {
 	// 查询目标用户信息
-	user := new(models.User)
-	if err = models.NewUserDao().QueryUserInfoById(user, p.userId); err != nil {
+	user := new(models2.User)
+	if err = models2.NewUserDao().QueryUserInfoById(user, p.userId); err != nil {
 		zap.L().Error("service user_video_list QueryUserInfoById method exec fail!", zap.Error(err))
 		return
 	}
-	p.data = make([]*models.Video, user.WorkCount)
-	if err = models.NewVideoDao().QueryUserVideoListById(p.data, p.userId); err != nil {
+	p.data = make([]*models2.Video, user.WorkCount)
+	if err = models2.NewVideoDao().QueryUserVideoListById(p.data, p.userId); err != nil {
 		zap.L().Error("service user_video_list QueryUserVideoListById method exec fail!", zap.Error(err))
 		return
 	}
@@ -65,7 +65,7 @@ func (p *PublishVideoListFlow) prepareData() (err error) {
 			vdo.Author = user
 			if p.tkUserId != p.userId {
 				var isFollow int
-				if isFollow, err = models.NewRelationDao().IsExistRelation(p.userId, vdo.UserId); err != nil {
+				if isFollow, err = models2.NewRelationDao().IsExistRelation(p.userId, vdo.UserId); err != nil {
 					zap.L().Error("service user_video_list NewRelationDao method exec fail!", zap.Error(err))
 				}
 				if isFollow == 1 {
@@ -73,7 +73,7 @@ func (p *PublishVideoListFlow) prepareData() (err error) {
 				}
 			}
 			var isFavor int
-			if isFavor, err = models.NewFavorDao().IsExistFavor(p.userId, vdo.VideoId); err != nil {
+			if isFavor, err = models2.NewFavorDao().IsExistFavor(p.userId, vdo.VideoId); err != nil {
 				zap.L().Error("service user_video_list IsExistFavor method exec fail!", zap.Error(err))
 			}
 			if isFavor == 1 {

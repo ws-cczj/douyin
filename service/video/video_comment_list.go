@@ -1,7 +1,7 @@
 package video
 
 import (
-	"douyin/models"
+	models2 "douyin/database/models"
 	"douyin/pkg/utils"
 	"errors"
 	"sync"
@@ -9,7 +9,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func CommentList(videoId, userId int64) ([]*models.Comment, error) {
+func CommentList(videoId, userId int64) ([]*models2.Comment, error) {
 	return NewVideoCommentList(videoId, userId).Do()
 }
 
@@ -20,10 +20,10 @@ func NewVideoCommentList(videoId, userId int64) *CommentListFlow {
 type CommentListFlow struct {
 	videoId, userId int64
 
-	data []*models.Comment
+	data []*models2.Comment
 }
 
-func (c *CommentListFlow) Do() ([]*models.Comment, error) {
+func (c *CommentListFlow) Do() ([]*models2.Comment, error) {
 	if err := c.checkNum(); err != nil {
 		return nil, err
 	}
@@ -46,17 +46,17 @@ func (c *CommentListFlow) checkNum() error {
 func (c *CommentListFlow) prepareData() (err error) {
 	// 找到该视频下的评论数量
 	var comments int64
-	if comments, err = models.NewVideoDao().QueryVideoCommentsById(c.videoId); err != nil {
+	if comments, err = models2.NewVideoDao().QueryVideoCommentsById(c.videoId); err != nil {
 		zap.L().Error("service video_comment_list QueryVideoCommentsById method exec fail!", zap.Error(err))
 		return
 	}
-	c.data = make([]*models.Comment, comments)
+	c.data = make([]*models2.Comment, comments)
 	return
 }
 
 func (c *CommentListFlow) packData() (err error) {
 	// 根据视频id查到该视频下所有评论信息
-	if err = models.NewCommentDao().QueryVideoCommentListById(c.data, c.videoId); err != nil {
+	if err = models2.NewCommentDao().QueryVideoCommentListById(c.data, c.videoId); err != nil {
 		zap.L().Error("service video_comment_list QueryVideoCommentListById method exec fail!", zap.Error(err))
 	}
 	if c.userId == 0 {
@@ -70,7 +70,7 @@ func (c *CommentListFlow) packData() (err error) {
 		go func() {
 			defer wg.Done()
 			var isFollow int
-			if isFollow, err = models.NewRelationDao().IsExistRelation(c.userId, ct.User.UserId); err != nil {
+			if isFollow, err = models2.NewRelationDao().IsExistRelation(c.userId, ct.User.UserId); err != nil {
 				zap.L().Error("service video_comment_list IsExistRelation method exec fail!", zap.Error(err))
 			}
 			if isFollow == 1 {

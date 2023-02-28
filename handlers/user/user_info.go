@@ -1,8 +1,8 @@
 package user
 
 import (
+	"douyin/database/models"
 	"douyin/handlers/common"
-	"douyin/models"
 	"douyin/pkg/e"
 	"douyin/service/user"
 	"net/http"

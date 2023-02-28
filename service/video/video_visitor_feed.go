@@ -2,7 +2,7 @@ package video
 
 import (
 	"douyin/consts"
-	"douyin/models"
+	models2 "douyin/database/models"
 	"errors"
 	"time"
 
@@ -14,14 +14,14 @@ func VisitorFeed(lastTime int64) (*FeedResponse, error) {
 }
 
 func NewVideoVisitorFeedFlow(lastTime int64) *VisitorFeedFlow {
-	return &VisitorFeedFlow{lastTime: lastTime, videos: make([]*models.Video, consts.MaxFeedVideos)}
+	return &VisitorFeedFlow{lastTime: lastTime, videos: make([]*models2.Video, consts.MaxFeedVideos)}
 }
 
 type VisitorFeedFlow struct {
 	lastTime int64
 
 	nextTime int64
-	videos   []*models.Video
+	videos   []*models2.Video
 
 	data *FeedResponse
 }
@@ -48,12 +48,12 @@ func (u *VisitorFeedFlow) checkNum() error {
 
 func (u *VisitorFeedFlow) prepareData() (err error) {
 	// 根据时间查询数据库中视频条数
-	if err = models.NewVideoDao().QueryVideoListByTime(u.videos, u.lastTime); err != nil {
+	if err = models2.NewVideoDao().QueryVideoListByTime(u.videos, u.lastTime); err != nil {
 		zap.L().Error("service video_visitor_feed QueryVideoListByTime method exec fail!", zap.Error(err))
 		return err
 	}
 	if u.videos[0] == nil {
-		if err = models.NewVideoDao().QueryVideoList(u.videos); err != nil {
+		if err = models2.NewVideoDao().QueryVideoList(u.videos); err != nil {
 			zap.L().Error("service video_visitor QueryVideoList method exec fail!", zap.Error(err))
 			return err
 		}
@@ -63,8 +63,8 @@ func (u *VisitorFeedFlow) prepareData() (err error) {
 			u.videos = u.videos[:i]
 			break
 		}
-		video.Author = new(models.User)
-		if err = models.NewUserDao().QueryUserInfoById(video.Author, video.UserId); err != nil {
+		video.Author = new(models2.User)
+		if err = models2.NewUserDao().QueryUserInfoById(video.Author, video.UserId); err != nil {
 			zap.L().Error("service video_visitor_feed QueryUserInfoById method exec fail!", zap.Error(err))
 			continue
 		}

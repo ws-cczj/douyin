@@ -1,14 +1,14 @@
 package relation
 
 import (
-	"douyin/models"
+	models2 "douyin/database/models"
 	"errors"
 	"sync"
 
 	"go.uber.org/zap"
 )
 
-func UserFollowList(userId, tkUserId int64, action bool) ([]*models.User, error) {
+func UserFollowList(userId, tkUserId int64, action bool) ([]*models2.User, error) {
 	return NewUserRelationListFlow(userId, tkUserId, action).Do()
 }
 
@@ -21,10 +21,10 @@ type UserRelationListFlow struct {
 
 	action bool
 
-	data []*models.User
+	data []*models2.User
 }
 
-func (f *UserRelationListFlow) Do() ([]*models.User, error) {
+func (f *UserRelationListFlow) Do() ([]*models2.User, error) {
 	if err := f.checkNum(); err != nil {
 		return nil, err
 	}
@@ -47,26 +47,26 @@ func (f *UserRelationListFlow) checkNum() (err error) {
 func (u *UserRelationListFlow) prepareData() (err error) {
 	if u.action {
 		var follows int64
-		if follows, err = models.NewUserDao().QueryUserFollows(u.userId); err != nil {
+		if follows, err = models2.NewUserDao().QueryUserFollows(u.userId); err != nil {
 			zap.L().Error("service relation_user_list QueryUserFollows method exec fail!", zap.Error(err))
 			return
 		}
-		u.data = make([]*models.User, follows)
+		u.data = make([]*models2.User, follows)
 		// 获取关注列表
-		if err = models.NewRelationDao().QueryUserFollowList(u.data, u.userId); err != nil {
+		if err = models2.NewRelationDao().QueryUserFollowList(u.data, u.userId); err != nil {
 			zap.L().Error("service relation_user_list QueryUserFollowList method exec fail!", zap.Error(err))
 			return
 		}
 	} else {
 		// 获取粉丝数
 		var followers int64
-		if followers, err = models.NewUserDao().QueryUserFollowers(u.userId); err != nil {
+		if followers, err = models2.NewUserDao().QueryUserFollowers(u.userId); err != nil {
 			zap.L().Error("service relation_user_list QueryUserFollowers method exec fail!", zap.Error(err))
 			return
 		}
-		u.data = make([]*models.User, followers)
+		u.data = make([]*models2.User, followers)
 		// 获取粉丝列表
-		if err = models.NewRelationDao().QueryUserFollowerList(u.data, u.userId); err != nil {
+		if err = models2.NewRelationDao().QueryUserFollowerList(u.data, u.userId); err != nil {
 			zap.L().Error("service relation_user_list QueryUserFollowerList method exec fail!", zap.Error(err))
 			return
 		}
@@ -82,7 +82,7 @@ func (u *UserRelationListFlow) packData() (err error) {
 		go func() {
 			defer wg.Done()
 			var isFollow int
-			if isFollow, err = models.NewRelationDao().IsExistRelation(u.tkUserId, user.UserId); err != nil {
+			if isFollow, err = models2.NewRelationDao().IsExistRelation(u.tkUserId, user.UserId); err != nil {
 				zap.L().Error("service relation_user_list IsExistRelation method exec fail!", zap.Error(err))
 			}
 			if isFollow == 1 {

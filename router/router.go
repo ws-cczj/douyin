@@ -4,11 +4,11 @@ import (
 	"douyin/conf"
 	"douyin/handlers/comment"
 	"douyin/handlers/favor"
+	"douyin/handlers/message"
 	"douyin/handlers/relation"
 	"douyin/handlers/user"
 	"douyin/handlers/video"
 	"douyin/middleware"
-
 	"github.com/gin-gonic/gin"
 )
 
@@ -37,11 +37,13 @@ func InitRouter(r *gin.Engine) {
 		v1.Use(middleware.Auth())
 		{
 			v1.GET("/user/", user.InfoHandler)
-			v1.GET("/relation/friend/list", relation.UserFriendListHandler)
+			v1.GET("/relation/friend/list/", relation.UserFriendListHandler)
 			v1.POST("/publish/action/", middleware.Ffmpeg(true), video.PublishHandler)
 			v1.POST("/favorite/action/", favor.VideoFavorHandler)
 			v1.POST("/comment/action/", comment.VideoCommentHandler)
 			v1.POST("/relation/action/", relation.UserActionHandler)
+			v1.POST("/message/action/", message.SendMessageHandler)
+			v1.GET("/message/chat/", message.FriendMessageListHandler)
 		}
 	}
 }

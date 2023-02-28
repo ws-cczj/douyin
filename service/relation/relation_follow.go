@@ -1,7 +1,7 @@
 package relation
 
 import (
-	"douyin/models"
+	"douyin/database/models"
 	"errors"
 
 	"go.uber.org/zap"

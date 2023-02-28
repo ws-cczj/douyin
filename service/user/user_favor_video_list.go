@@ -1,14 +1,14 @@
 package user
 
 import (
-	"douyin/models"
+	models2 "douyin/database/models"
 	"errors"
 	"sync"
 
 	"go.uber.org/zap"
 )
 
-func FavorVideoList(userId, tkUserId int64) ([]*models.Video, error) {
+func FavorVideoList(userId, tkUserId int64) ([]*models2.Video, error) {
 	return NewFavorVideoListFlow(userId, tkUserId).Do()
 }
 
@@ -18,10 +18,10 @@ func NewFavorVideoListFlow(userId, tkUserId int64) *FavorVideoListFlow {
 
 type FavorVideoListFlow struct {
 	userId, tkUserId int64
-	data             []*models.Video
+	data             []*models2.Video
 }
 
-func (f *FavorVideoListFlow) Do() ([]*models.Video, error) {
+func (f *FavorVideoListFlow) Do() ([]*models2.Video, error) {
 	if err := f.checkNum(); err != nil {
 		return nil, err
 	}
@@ -44,7 +44,7 @@ func (f *FavorVideoListFlow) prepareData() (err error) {
 	// 需要判断当前用户与这些视频的作者是否关注以及视频是否进行了点赞
 
 	// 1. 首先需要拿到目标用户的点赞视频数,然后拿到点赞视频列表
-	favors, err := models.NewUserDao().QueryUserFavorVideos(f.userId)
+	favors, err := models2.NewUserDao().QueryUserFavorVideos(f.userId)
 	if err != nil {
 		zap.L().Error("service user_favor_video_list QueryUserFavorVideos method exec fail!", zap.Error(err))
 		return
@@ -52,15 +52,15 @@ func (f *FavorVideoListFlow) prepareData() (err error) {
 	if favors == 0 {
 		return
 	}
-	f.data = make([]*models.Video, favors)
-	if err = models.NewVideoDao().QueryVideoListWithFavors(f.data, f.userId); err != nil {
+	f.data = make([]*models2.Video, favors)
+	if err = models2.NewVideoDao().QueryVideoListWithFavors(f.data, f.userId); err != nil {
 		zap.L().Error("service user_favor_video_list QueryVideoListWithFavors method exec fail!", zap.Error(err))
 	}
 	// 2. 根据视频进行遍历搜索
 	for _, video := range f.data {
 		// 通过id查询用户信息
-		video.Author = new(models.User)
-		if err = models.NewUserDao().QueryUserInfoById(video.Author, video.UserId); err != nil {
+		video.Author = new(models2.User)
+		if err = models2.NewUserDao().QueryUserInfoById(video.Author, video.UserId); err != nil {
 			zap.L().Error("service user_favor_video_list QueryUserInfoById method exec fail!", zap.Error(err))
 		}
 	}
@@ -77,7 +77,7 @@ func (f *FavorVideoListFlow) prepareData() (err error) {
 			defer wg.Done()
 			if f.tkUserId != vdo.UserId {
 				var isFollow int
-				if isFollow, err = models.NewRelationDao().IsExistRelation(f.tkUserId, vdo.UserId); err != nil {
+				if isFollow, err = models2.NewRelationDao().IsExistRelation(f.tkUserId, vdo.UserId); err != nil {
 					zap.L().Error("service user_favor_video_list NewRelationDao method exec fail!", zap.Error(err))
 				}
 				if isFollow == 1 {
@@ -85,7 +85,7 @@ func (f *FavorVideoListFlow) prepareData() (err error) {
 				}
 			}
 			var isFavor int
-			if isFavor, err = models.NewFavorDao().IsExistFavor(f.tkUserId, vdo.VideoId); err != nil {
+			if isFavor, err = models2.NewFavorDao().IsExistFavor(f.tkUserId, vdo.VideoId); err != nil {
 				zap.L().Error("service user_favor_video_list IsExistFavor method exec fail!", zap.Error(err))
 			}
 			if isFavor == 1 {

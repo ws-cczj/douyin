@@ -206,6 +206,16 @@ func (*RelationDao) Action2UserRelation(userId, toUserId int64, isFollow, isFoll
 	return
 }
 
+// IsExistFriend 是否存在朋友关系
+func (*RelationDao) IsExistFriend(userId, toUserId int64) (bool, error) {
+	qStr := `select is_friend from user_relations where user_id = ? AND to_user_id = ?`
+	var isFriend int
+	if err := db.GetContext(ctx, &isFriend, qStr, userId, toUserId); err != nil {
+		zap.L().Error("models relation query IsFriend fail!", zap.Error(err))
+	}
+	return isFriend == 1, nil
+}
+
 // QueryUserFriendsById 根据id查询朋友数目
 func (*RelationDao) QueryUserFriendsById(userId int64) (friends int64, err error) {
 	qStr := `select Count(*) from user_relations where user_id = ? AND is_friend = 1`

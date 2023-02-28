@@ -1,8 +1,8 @@
 package relation
 
 import (
+	"douyin/database/models"
 	"douyin/handlers/common"
-	"douyin/models"
 	"douyin/pkg/e"
 	"douyin/pkg/utils"
 	"douyin/service/relation"

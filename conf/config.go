@@ -16,6 +16,7 @@ type Config struct {
 	Ffmpeg    `mapstructure:"ffmpeg"`
 	MDB       Mysql `mapstructure:"mysql"`
 	RDB       Redis `mapstructure:"redis"`
+	MgDB      Mongo `mapstructure:"mongo"`
 }
 
 type Server struct {
@@ -62,6 +63,13 @@ type Redis struct {
 	PoolSize   int    `mapstructure:"pool_size"`
 	Addr       string `mapstructure:"addr"`
 	Password   string `mapstructure:"password"`
+}
+
+type Mongo struct {
+	MaxPoolSize uint64 `mapstructure:"max_pools"`
+	MinPoolSize uint64 `mapstructure:"min_pools"`
+	MaxConns    uint64 `mapstructure:"max_opens_conns"`
+	Addr        string `mapstructure:"addr"`
 }
 
 func init() {

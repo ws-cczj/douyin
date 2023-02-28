@@ -3,7 +3,8 @@ package main
 import (
 	"context"
 	"douyin/conf"
-	"douyin/models"
+	"douyin/database/models"
+	"douyin/database/mongodb"
 	"douyin/pkg/logger"
 	"douyin/pkg/utils"
 	"douyin/router"
@@ -38,6 +39,8 @@ func InitDevs() {
 	// 初始化数据库
 	models.InitMysql()
 	// 初始化redis缓存
+	// 初始化mongo缓存
+	mongodb.InitMongodb()
 	//cache.InitRedis()
 	// TODO 初始化敏感词拦截器。
 
@@ -65,5 +68,6 @@ func goAndShutdown(r *gin.Engine) {
 		zap.L().Error("Server Shutdown fail!", zap.Error(err))
 	}
 	models.Close()
+	mongodb.Close()
 	//cache.Close()
 }

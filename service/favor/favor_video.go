@@ -1,7 +1,7 @@
 package favor
 
 import (
-	"douyin/models"
+	models2 "douyin/database/models"
 	"errors"
 
 	"go.uber.org/zap"
@@ -37,7 +37,7 @@ func (f *FavorVideoFlow) checkNum() (err error) {
 		return errors.New("用户或视频不存在")
 	}
 	// 1. 检查视频是否存在
-	isExist, err := models.NewVideoDao().IsExistVideoById(f.videoId)
+	isExist, err := models2.NewVideoDao().IsExistVideoById(f.videoId)
 	if err != nil {
 		zap.L().Error("service favor_video IsExistVideoById method exec fail!", zap.Error(err))
 		return
@@ -47,7 +47,7 @@ func (f *FavorVideoFlow) checkNum() (err error) {
 		return errors.New("视频不存在")
 	}
 	// 2. 检查数据是否合法
-	if f.isFavor, err = models.NewFavorDao().IsExistFavor(f.userId, f.videoId); err != nil {
+	if f.isFavor, err = models2.NewFavorDao().IsExistFavor(f.userId, f.videoId); err != nil {
 		zap.L().Error("service favor_video IsExistFavor method exec fail!")
 		return
 	}
@@ -61,12 +61,12 @@ func (f *FavorVideoFlow) checkNum() (err error) {
 func (f *FavorVideoFlow) updateData() (err error) {
 	switch f.action {
 	case "1":
-		if err = models.NewFavorDao().AddUserFavorVideoInfoById(f.userId, f.videoId, f.isFavor); err != nil {
+		if err = models2.NewFavorDao().AddUserFavorVideoInfoById(f.userId, f.videoId, f.isFavor); err != nil {
 			zap.L().Error("service favor_video AddUserFavorVideoInfoById method exec fail!")
 			return
 		}
 	case "2":
-		if err = models.NewFavorDao().SubUserFavorsInfoById(f.userId, f.videoId, f.isFavor); err != nil {
+		if err = models2.NewFavorDao().SubUserFavorsInfoById(f.userId, f.videoId, f.isFavor); err != nil {
 			zap.L().Error("service favor_video SubUserFavorsInfoById method exec fail!")
 			return
 		}

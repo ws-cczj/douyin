@@ -2,7 +2,7 @@ package video
 
 import (
 	"douyin/consts"
-	"douyin/models"
+	"douyin/database/models"
 	"douyin/pkg/utils"
 	"errors"
 

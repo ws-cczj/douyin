@@ -34,3 +34,8 @@ redis:
   favor_db: 4
   comment_db: 5
   pool_size: 100
+mongo:
+  addr: "cczj:27017"
+  max_pools: 50
+  min_pools: 20
+  max_opens_conns: 200
