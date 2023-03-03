@@ -2,16 +2,14 @@ package utils
 
 import (
 	"douyin/consts"
-	"errors"
+	"douyin/pkg/e"
+	"go.uber.org/zap"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
 )
 
-var (
-	mySecret        = []byte(consts.JWTSecret)
-	ErrInvalidToken = errors.New("verify Token Failed")
-)
+var mySecret = []byte(consts.JWTSecret)
 
 type MyClaim struct {
 	UserID int64 `json:"user_id"`
@@ -39,10 +37,12 @@ func VerifyToken(tokenStr string) (*MyClaim, error) {
 		return mySecret, nil
 	})
 	if err != nil {
+		zap.L().Error("utils jwt ParseWithClaims method exec fail!", zap.Error(err))
 		return nil, err
 	}
 	if !token.Valid {
-		return nil, ErrInvalidToken
+		zap.L().Error("utils jwt token expired!", zap.Error(err))
+		return nil, e.FailTokenExpired.Err()
 	}
 	return mc, nil
 }

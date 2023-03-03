@@ -2,6 +2,7 @@ package cache
 
 import (
 	"douyin/consts"
+	"douyin/pkg/e"
 	"douyin/pkg/utils"
 	"sync"
 
@@ -56,14 +57,13 @@ func (*FavorCache) SCardQueryUserFavorVideos(userId int64) (favors int64, err er
 }
 
 // SAddReSetUserFavorVideo 重设用户点赞视频缓存
-func (*FavorCache) SAddReSetUserFavorVideo(userId int64, videoId []int64) {
-	userFavorKey := utils.AddCacheKey(consts.CacheUser, consts.CacheSetUserFavor, utils.I64toa(userId))
+func (*FavorCache) SAddReSetUserFavorVideo(key string, videoId []int64) {
 	pipe := rdbFavor.Pipeline()
-	pipe.SAdd(ctx, userFavorKey, -1)
+	pipe.SAdd(ctx, key, -1)
 	for _, id := range videoId {
-		pipe.SAdd(ctx, userFavorKey, id)
+		pipe.SAdd(ctx, key, id)
 	}
-	pipe.Expire(ctx, userFavorKey, consts.CacheExpired)
+	pipe.Expire(ctx, key, consts.CacheExpired)
 	if _, err := pipe.Exec(ctx); err != nil {
 		zap.L().Error("cache favor SAddReSetUserFavorVideo method exec fail!", zap.Error(err))
 	}
@@ -85,4 +85,26 @@ func (*FavorCache) SMembersQueryUserFavorVideoList(userId int64) ([]int64, error
 		videoList = append(videoList, cmder.(*redis.IntCmd).Val())
 	}
 	return videoList, nil
+}
+
+// SIsMemberIsExistFavor 是否存在点赞
+func (*FavorCache) SIsMemberIsExistFavor(key string, videoId int64) (bool, error) {
+	if key == "" {
+		return false, e.FailNotKnow.Err()
+	}
+	return rdbFavor.SIsMember(ctx, key, utils.I64toa(videoId)).Result()
+}
+
+// TTLIsExpiredCache 判断缓存是否过期
+func (*FavorCache) TTLIsExpiredCache(key string) error {
+	if key == "" {
+		return e.FailNotKnow.Err()
+	}
+	if t := rdbFavor.TTL(ctx, key).Val(); t < 1 {
+		zap.L().Error("cache favor ttl < 0", zap.String("key", key))
+		return e.FailCacheExpried.Err()
+	}
+	// 如果缓存没有过期就去续约
+	go rdbRelation.Expire(ctx, key, consts.CacheExpired)
+	return nil
 }

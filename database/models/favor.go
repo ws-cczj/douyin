@@ -191,11 +191,11 @@ func (*FavorDao) QueryUserVideosFavors(videoIds []int64) (favors []int64, err er
 }
 
 // QueryUserFavorVideoList 查询用户点赞的视频列表
-func (*FavorDao) QueryUserFavorVideoList(userId, favors int64) (favorsVideos []int64, err error) {
+func (*FavorDao) QueryUserFavorVideoList(userId int64) (favorsVideos []int64, err error) {
 	qStr := `select video_id 
 					from user_favor_videos 
 					where user_id = ? AND is_favor = ?`
-	favorsVideos = make([]int64, favors)
+	favorsVideos = []int64{}
 	if err = db.SelectContext(ctx, &favorsVideos, qStr, userId, 1); err != nil {
 		zap.L().Error("models favor SelectContext method exec fail!", zap.Error(err))
 	}

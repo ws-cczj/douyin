@@ -24,7 +24,7 @@ func InfoHandler(c *gin.Context) {
 	tkUid, ok := tkUidStr.(int64)
 	if !ok {
 		zap.L().Error("handlers user_info InfoHandler uid invalid")
-		common.FailWithCode(c, e.FailTokenInvalid)
+		common.FailWithCode(c, e.FailTokenVerify)
 		return
 	}
 	uid, err := strconv.ParseInt(uidStr, 10, 64)

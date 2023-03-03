@@ -58,11 +58,6 @@ func GetPicUrl(fileName string) string {
 	return fmt.Sprintf("http://%s:%d/static/pic/%s", conf.Conf.Ip, conf.Conf.Port, fileName)
 }
 
-// NewFileName 根据时间戳+用户Id
-func NewFileName(userId int64) string {
-	return fmt.Sprintf("%d-%d", time.Now().Unix(), userId)
-}
-
 // SaveImageFromVideo 将视频切一帧保存到本地
 // isDebug用于控制是否打印出执行的ffmpeg命令
 func SaveImageFromVideo(name string, isDebug bool) error {

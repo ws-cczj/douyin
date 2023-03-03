@@ -2,6 +2,7 @@ package cache
 
 import (
 	"douyin/consts"
+	"douyin/pkg/e"
 	"douyin/pkg/utils"
 	"sync"
 
@@ -80,8 +81,8 @@ func (*RelationCache) SRemActionUserFollowAndFollower(userId, toUserId int64, us
 	return
 }
 
-// SAddReSetActionUserFollowAndFollower 用户多次关注行为缓存重置
-func (*RelationCache) SAddReSetActionUserFollowAndFollower(key string, toUserIds []int64) {
+// SAddResetActionUserFollowOrFollower 用户多次关注行为缓存重置
+func (*RelationCache) SAddResetActionUserFollowOrFollower(key string, toUserIds []int64) {
 	pipe := rdbRelation.Pipeline()
 	// 填充初始数据 -1
 	pipe.SAdd(ctx, key, -1)
@@ -90,7 +91,7 @@ func (*RelationCache) SAddReSetActionUserFollowAndFollower(key string, toUserIds
 	}
 	pipe.Expire(ctx, key, consts.CacheExpired)
 	if _, err := pipe.Exec(ctx); err != nil {
-		zap.L().Error("cache relation SAddMoreActionUserFollow method exec fail!", zap.Error(err))
+		zap.L().Error("cache relation SAddResetActionUserFollowOrFollower method exec fail!", zap.Error(err))
 	}
 }
 
@@ -120,17 +121,24 @@ func (*RelationCache) SCardQueryUserFollowers(userId int64) (followers int64, er
 	return -1, err
 }
 
-// TTLIsExpiredCache 判断缓存是否过期
-func (*RelationCache) TTLIsExpiredCache(keys ...string) ([]bool, error) {
-	cmders, err := rdbRelation.Pipelined(ctx, func(pipe redis.Pipeliner) error {
-		for _, key := range keys {
-			pipe.TTL(ctx, key)
-		}
-		return nil
-	})
-	oks := make([]bool, len(keys))
-	for _, cmder := range cmders {
-		oks = append(oks, cmder.(*redis.DurationCmd).Val() > 0)
+// SIsMemberIsExistRelation 判断是否存在关系
+func (*RelationCache) SIsMemberIsExistRelation(key string, toUserId int64) (bool, error) {
+	if key == "" {
+		return false, e.FailNotKnow.Err()
 	}
-	return oks, err
+	return rdbRelation.SIsMember(ctx, key, utils.I64toa(toUserId)).Result()
+}
+
+// TTLIsExpiredCache 判断缓存是否过期
+func (*RelationCache) TTLIsExpiredCache(key string) error {
+	if key == "" {
+		return e.FailNotKnow.Err()
+	}
+	if t := rdbRelation.TTL(ctx, key).Val(); t < 1 {
+		zap.L().Error("cache relation ttl < 0", zap.String("key", key))
+		return e.FailCacheExpried.Err()
+	}
+	// 如果缓存没有过期就去续约
+	go rdbRelation.Expire(ctx, key, consts.CacheExpired)
+	return nil
 }

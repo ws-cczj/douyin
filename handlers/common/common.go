@@ -19,7 +19,15 @@ func FailWithCode(c *gin.Context, code e.Code) {
 
 // FailWithMsg 带有Msg的请求失败响应
 func FailWithMsg(c *gin.Context, msg string) {
-	c.JSON(http.StatusOK, Response{StatusCode: e.FailNotKnow, StatusMsg: msg})
+	c.JSON(http.StatusOK, Response{StatusCode: e.FailServerBusy, StatusMsg: msg})
+}
+
+// FailInner 数据库等内部程序错误避免返回给用户，进行统一错误处理
+func FailInner(c *gin.Context) {
+	c.JSON(http.StatusOK, Response{
+		StatusCode: e.FailServerBusy,
+		StatusMsg:  e.FailServerBusy.Msg(),
+	})
 }
 
 // SuccessWithMsg 带有消息的请求成功响应

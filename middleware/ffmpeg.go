@@ -7,6 +7,8 @@ import (
 	"douyin/pkg/utils"
 	"fmt"
 	"path/filepath"
+	"sync"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -41,19 +43,24 @@ func Ffmpeg(isDebug bool) gin.HandlerFunc {
 			return
 		}
 		// 获取拼接名称
-		name := utils.NewFileName(userId)
+		name := fmt.Sprintf("%d-%d", time.Now().Unix(), userId)
 		newName := fmt.Sprintf("%s%s", name, suffix)
-		newVideoPath := filepath.Join("./public", newName)
-		// 保存视频到本地
-		if err = c.SaveUploadedFile(file, newVideoPath); err != nil {
-			zap.L().Error("middleware ffmpeg video Save fail!", zap.Error(err))
-			common.FailWithCode(c, e.FailServerBusy)
-			c.Abort()
-			return
-		}
+		var wg sync.WaitGroup
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			newVideoPath := filepath.Join("./public", newName)
+			// 保存视频到本地
+			if err = c.SaveUploadedFile(file, newVideoPath); err != nil {
+				zap.L().Error("middleware ffmpeg video Save fail!", zap.Error(err))
+			}
+		}()
 		// 保存图片到本地
 		if err = utils.SaveImageFromVideo(name, isDebug); err != nil {
 			zap.L().Error("middleware ffmpeg video cover Save fail!", zap.Error(err))
+		}
+		wg.Wait()
+		if err != nil {
 			common.FailWithCode(c, e.FailServerBusy)
 			c.Abort()
 			return

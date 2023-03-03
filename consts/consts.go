@@ -18,6 +18,7 @@ const (
 	CacheUser             = "user:"               // 用户缓存
 	CacheRelation         = "relation:"           // 关系缓存
 	CacheVideo            = "video:"              // 视频缓存
+	CacheFavor            = "favor"               // 点赞缓存
 	CacheComment          = "comment:"            // 评论缓存
 	CacheSetUserVideo     = "set_user_video:"     // set存储, 用户视频列表: key: userId, val: videoId...
 	CacheSetUserFavor     = "set_user_favor:"     // set存储, 用户点赞列表: key: userId, val: videoId...

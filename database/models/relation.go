@@ -57,6 +57,16 @@ func (*RelationDao) QueryUserFollowList(user []*User, userId int64) (err error) 
 	return
 }
 
+// QueryUserFollowIds 查询用户的关注列表ids
+func (*RelationDao) QueryUserFollowIds(userId int64) (ids []int64, err error) {
+	ids = []int64{}
+	qStr := `select to_user_id from user_relations where user_id = ? AND is_follow = ?`
+	if err = db.SelectContext(ctx, &ids, qStr, userId, 1); err != nil {
+		zap.L().Error("models relation follow ids query fail!", zap.Error(err))
+	}
+	return
+}
+
 // QueryUserFollowerList 查询用户的粉丝列表
 func (*RelationDao) QueryUserFollowerList(user []*User, toUserId int64) (err error) {
 	qStr := `select user_id,username,avatar,background_image,signature,
@@ -66,6 +76,16 @@ func (*RelationDao) QueryUserFollowerList(user []*User, toUserId int64) (err err
                                     where to_user_id = ? AND is_follow = ?)`
 	if err = db.SelectContext(ctx, &user, qStr, toUserId, 1); err != nil {
 		zap.L().Error("models relation follower data query fail!", zap.Error(err))
+	}
+	return
+}
+
+// QueryUserFollowerIds 查询用户的粉丝列表ids
+func (*RelationDao) QueryUserFollowerIds(toUserId int64) (ids []int64, err error) {
+	ids = []int64{}
+	qStr := `select user_id from user_relations where user_id = ? AND is_follow = ?`
+	if err = db.SelectContext(ctx, &ids, qStr, toUserId, 1); err != nil {
+		zap.L().Error("models relation follower ids query fail!", zap.Error(err))
 	}
 	return
 }

@@ -3,9 +3,8 @@ package user
 import (
 	"douyin/consts"
 	"douyin/database/models"
+	"douyin/pkg/e"
 	"douyin/pkg/utils"
-	"errors"
-
 	"go.uber.org/zap"
 )
 
@@ -42,30 +41,31 @@ func (r *RegisterFlow) Do() (*LoginResponse, error) {
 	return r.data, nil
 }
 
-// CheckNum 校验参数
+// checkNum 校验参数
 func (r *RegisterFlow) checkNum() (err error) {
-	if r.username == "" {
-		return errors.New("用户名为空")
+	// 检查用户名或者密码是否为空
+	if r.username == "" || r.password == "" {
+		return e.FailNotKnow.Err()
 	}
+	// 检查用户名长度是否超过限度
 	if len(r.username) > consts.MaxUsernameLimit {
-		return errors.New("超出用户名字数上限")
+		return e.FailUsernameLimit.Err()
 	}
-	if r.password == "" {
-		return errors.New("密码为空")
-	}
+	// 检查用户密码长度是否超过限度
 	if len(r.password) > consts.MaxUserPasswordLimit {
-		return errors.New("超出用户密码字数上限")
+		return e.FailPasswordLimit.Err()
 	}
 	// 检查用户名是否重复
 	if r.userId, err = models.NewUserDao().IsExistUsername(r.username); err != nil {
 		zap.L().Error("service user_register isExistUsername method exec fail", zap.Error(err))
-		return
+		return e.FailServerBusy.Err()
 	}
+	// 检查该用户是否存在
 	if r.userId != 0 {
 		zap.L().Warn("service user_register current Username already exists!")
-		return errors.New("用户名已经存在")
+		return e.FailUsernameExist.Err()
 	}
-	return nil
+	return
 }
 
 // updateData 更新数据
@@ -77,12 +77,12 @@ func (r *RegisterFlow) updateData() (err error) {
 	// 3. 注册执行
 	if err = models.NewUserDao().AddUser(r.userId, r.username, r.password); err != nil {
 		zap.L().Error("service user_register AddUser method exec fail", zap.Error(err))
-		return
+		return e.FailServerBusy.Err()
 	}
 	// 4. 生成token
 	if r.token, err = utils.GenToken(r.userId); err != nil {
 		zap.L().Error("service user_register utils.GenToken method exec fail!", zap.Error(err))
-		return
+		return e.FailServerBusy.Err()
 	}
 	// 5. 初始化用户缓存数据
 	//go cache.NewRelationCache().SAddRegisterActionUserFollowAndFollower(r.userId)
