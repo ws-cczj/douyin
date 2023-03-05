@@ -82,24 +82,27 @@ func (*RelationCache) SRemActionUserFollowAndFollower(userId, toUserId int64, us
 }
 
 // SAddResetActionUserFollowOrFollower 用户多次关注行为缓存重置
-func (*RelationCache) SAddResetActionUserFollowOrFollower(key string, toUserIds []int64) {
-	pipe := rdbRelation.Pipeline()
-	// 填充初始数据 -1
-	pipe.SAdd(ctx, key, -1)
-	for _, id := range toUserIds {
-		pipe.SAdd(ctx, key, id)
-	}
-	pipe.Expire(ctx, key, consts.CacheExpired)
-	if _, err := pipe.Exec(ctx); err != nil {
-		zap.L().Error("cache relation SAddResetActionUserFollowOrFollower method exec fail!", zap.Error(err))
+func (r *RelationCache) SAddResetActionUserFollowOrFollower(key string, toUserIds []int64) {
+	if key != "" {
+		pipe := rdbRelation.Pipeline()
+		// 填充初始数据 -1
+		pipe.SAdd(ctx, key, -1)
+		for _, id := range toUserIds {
+			pipe.SAdd(ctx, key, id)
+		}
+		pipe.Expire(ctx, key, consts.CacheExpired)
+		if _, err := pipe.Exec(ctx); err != nil {
+			zap.L().Error("cache relation SAddResetActionUserFollowOrFollower method exec fail!", zap.Error(err))
+			// 如果失败就将缓存进行删除,避免脏数据
+			go r.SPopNRemoveCache(key, int64(len(toUserIds)))
+		}
 	}
 }
 
 // SCardQueryUserFollows 查询用户关注数
-func (*RelationCache) SCardQueryUserFollows(userId int64) (follows int64, err error) {
-	userFollowKey := utils.AddCacheKey(consts.CacheRelation, consts.CacheSetUserFollow, utils.I64toa(userId))
-	if follows, err = rdbRelation.SCard(ctx, userFollowKey).Result(); follows > 0 {
-		go rdbRelation.Expire(ctx, userFollowKey, consts.CacheExpired)
+func (*RelationCache) SCardQueryUserFollows(key string) (follows int64, err error) {
+	if follows, err = rdbRelation.SCard(ctx, key).Result(); follows > 0 {
+		go rdbRelation.Expire(ctx, key, consts.CacheExpired)
 		return follows - 1, nil
 	}
 	if err != nil {
@@ -130,15 +133,54 @@ func (*RelationCache) SIsMemberIsExistRelation(key string, toUserId int64) (bool
 }
 
 // TTLIsExpiredCache 判断缓存是否过期
-func (*RelationCache) TTLIsExpiredCache(key string) error {
+func (r *RelationCache) TTLIsExpiredCache(key string) error {
 	if key == "" {
 		return e.FailNotKnow.Err()
 	}
 	if t := rdbRelation.TTL(ctx, key).Val(); t < 1 {
 		zap.L().Error("cache relation ttl < 0", zap.String("key", key))
-		return e.FailCacheExpried.Err()
+		return e.FailCacheExpired.Err()
 	}
 	// 如果缓存没有过期就去续约
-	go rdbRelation.Expire(ctx, key, consts.CacheExpired)
+	go r.ExpireContinueCache(key)
 	return nil
+}
+
+// DelCache 删除缓存
+func (*RelationCache) DelCache(key string) {
+	if key != "" {
+		var err error
+		// 启动错误重试机制，如果删除失败后果比较严重
+		for i := 1; i <= consts.CacheMaxTryTimes; i++ {
+			if err = rdbRelation.Del(ctx, key).Err(); err == nil {
+				return
+			}
+			zap.L().Warn("cache relation DelCache Del method exec fail!",
+				zap.Error(err),
+				zap.Int("try times", i))
+		}
+	}
+}
+
+// SPopNRemoveCache 弹出缓存中所有数据
+func (*RelationCache) SPopNRemoveCache(key string, cnt int64) {
+	if key != "" {
+		var err error
+		// 启动错误重试机制，如果删除失败后果比较严重
+		for i := 1; i <= consts.CacheMaxTryTimes; i++ {
+			if err = rdbRelation.SPopN(ctx, key, cnt).Err(); err == nil {
+				return
+			}
+			zap.L().Warn("cache relation SPopNRemoveCache SPopN method exec fail!",
+				zap.Error(err),
+				zap.Int("try times", i))
+		}
+	}
+}
+
+// ExpireContinueCache  续约缓存
+func (*RelationCache) ExpireContinueCache(key string) {
+	if key != "" {
+		rdbRelation.Expire(ctx, key, consts.CacheExpired)
+	}
 }

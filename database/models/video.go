@@ -77,6 +77,16 @@ func (*VideoDao) PublishVideo(videoId, userId int64, playUrl, coverUrl, title st
 	return
 }
 
+// QueryUserVideosById 查询用户发布的视频列表ids
+func (*VideoDao) QueryUserVideosById(userId int64) (ids []int64, err error) {
+	qStr := `select video_id from videos where user_id = ? AND is_delete = ?`
+	ids = []int64{}
+	if err = db.SelectContext(ctx, &ids, qStr, userId, 0); err != nil {
+		zap.L().Error("models video SelectContext method exec fail!", zap.Error(err))
+	}
+	return
+}
+
 // QueryUserVideoListById 查询用户发布的视频列表
 func (*VideoDao) QueryUserVideoListById(videos []*Video, userId int64) (err error) {
 	qStr := `select video_id,user_id,play_url,cover_url,favored_count,comment_count,title
@@ -132,6 +142,10 @@ func (*VideoDao) QueryVideoList(videos []*Video) (err error) {
 func (*VideoDao) QueryVideoCommentsById(videoId int64) (comments int64, err error) {
 	qStr := `select comment_count from videos where video_id = ?`
 	if err = db.GetContext(ctx, &comments, qStr, videoId); err != nil {
+		if err == sql.ErrNoRows {
+			zap.L().Warn("models video comments data is null!")
+			return 0, nil
+		}
 		zap.L().Error("models video GetContext method exec fail!", zap.Error(err))
 	}
 	return

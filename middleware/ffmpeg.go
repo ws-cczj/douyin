@@ -30,7 +30,7 @@ func Ffmpeg(isDebug bool) gin.HandlerFunc {
 		file, err := c.FormFile("data")
 		if err != nil {
 			zap.L().Error("middleware ffmpeg FormFile get data fail!", zap.Error(err))
-			common.FailWithCode(c, e.FailParamInvalid)
+			common.FailWithCode(c, e.FailNotKnow)
 			c.Abort()
 			return
 		}

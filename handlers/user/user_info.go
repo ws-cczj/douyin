@@ -30,7 +30,7 @@ func InfoHandler(c *gin.Context) {
 	uid, err := strconv.ParseInt(uidStr, 10, 64)
 	if err != nil {
 		zap.L().Error("handlers user_info InfoHandler param uid invalid")
-		common.FailWithCode(c, e.FailParamInvalid)
+		common.FailWithCode(c, e.FailNotKnow)
 		return
 	}
 	var userResponse *models.User

@@ -5,9 +5,8 @@ import (
 	"douyin/pkg/e"
 	"douyin/pkg/utils"
 	"douyin/service/video"
-	"net/http"
-
 	"go.uber.org/zap"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 )

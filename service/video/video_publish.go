@@ -1,11 +1,11 @@
 package video
 
 import (
+	"douyin/cache"
 	"douyin/consts"
 	"douyin/database/models"
+	"douyin/pkg/e"
 	"douyin/pkg/utils"
-	"errors"
-
 	"go.uber.org/zap"
 )
 
@@ -23,29 +23,43 @@ type PublishFlow struct {
 }
 
 func (p *PublishFlow) Do() (err error) {
-	if err = p.check(); err != nil {
+	if err = p.checkNum(); err != nil {
 		return
 	}
-	if err = p.publish(); err != nil {
-		return err
+	if err = p.updateData(); err != nil {
+		zap.L().Error("service video_publish updateData method exec fail!", zap.Error(err))
+		return e.FailServerBusy.Err()
 	}
 	return nil
 }
 
-func (p *PublishFlow) check() error {
+func (p *PublishFlow) checkNum() error {
 	if p.title == "" {
-		return errors.New("标题为空!")
+		return e.FailVideoTitleCantNull.Err()
 	}
 	if len(p.title) > consts.MaxVideoTileLimit {
-		return errors.New("视频标题超过要求长度!")
+		return e.FailVideoTitleLimit.Err()
 	}
 	return nil
 }
 
-func (p *PublishFlow) publish() (err error) {
+func (p *PublishFlow) updateData() (err error) {
 	videoId := utils.GenID()
 	if err = models.NewVideoDao().PublishVideo(videoId, p.userId, p.playUrl, p.coverUrl, p.title); err != nil {
 		zap.L().Error("service video_publish PublishVideo method exec fail!", zap.Error(err))
 	}
-	return
+	// 保证缓存一致性，先删除缓存，再更新数据库
+	go func() {
+		userKey := utils.AddCacheKey(consts.CacheUser, consts.CacheSetUserVideo, utils.I64toa(p.userId))
+		cache.NewUserCache().DelCache(userKey)
+
+		var videoIds []int64
+		if videoIds, err = models.NewVideoDao().QueryUserVideosById(p.userId); err != nil {
+			zap.L().Error("service video_publish QueryUserVideosById method exec fail!", zap.Error(err))
+		}
+		if len(videoIds) > 0 {
+			cache.NewUserCache().SAddReSetUserVideoList(userKey, videoIds)
+		}
+	}()
+	return nil
 }

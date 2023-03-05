@@ -124,6 +124,19 @@ func (*CommentDao) QueryUserCommentById(comment *Comment, commentId int64) (err 
 	return
 }
 
+// QueryVideoCommentsById 根据id来查询该视频下所有的评论列表ids
+func (*CommentDao) QueryVideoCommentsById(videoId int64) (ids int64, err error) {
+	qStr := `select COUNT(*) from video_comments where video_id = ? AND is_delete = ?`
+	if err = db.GetContext(ctx, &ids, qStr, videoId, 0); err != nil {
+		if err == sql.ErrNoRows {
+			zap.L().Warn("models comment Get comments data is null!")
+			return 0, nil
+		}
+		zap.L().Error("models comment GetContext method exec fail!", zap.Error(err))
+	}
+	return
+}
+
 // QueryVideoCommentListById 根据id来查询该视频下所有的评论列表
 func (*CommentDao) QueryVideoCommentListById(comments []*Comment, videoId int64) (err error) {
 	qStr := `select u.user_id,username,follow_count,follower_count,avatar,background_image,

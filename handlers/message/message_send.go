@@ -20,7 +20,7 @@ func SendMessageHandler(c *gin.Context) {
 	msg := new(SendMessageRequest)
 	if err := c.ShouldBind(msg); err != nil {
 		zap.L().Error("handlers message param invalid!", zap.Error(err))
-		common.FailWithCode(c, e.FailParamInvalid)
+		common.FailWithCode(c, e.FailNotKnow)
 		return
 	}
 	userId := c.GetInt64("user_id")

@@ -32,7 +32,7 @@ func VideoCommentHandler(c *gin.Context) {
 	var err error
 	if err = c.ShouldBind(vcQ); err != nil {
 		zap.L().Error("handlers comment_video param binding fail!", zap.Error(err))
-		common.FailWithCode(c, e.FailParamInvalid)
+		common.FailWithCode(c, e.FailNotKnow)
 		return
 	}
 	var mc *models.Comment

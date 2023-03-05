@@ -6,10 +6,9 @@ import (
 	"douyin/pkg/e"
 	"douyin/pkg/utils"
 	"douyin/service/user"
-	"net/http"
-
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
+	"net/http"
 )
 
 type VideoListResponse struct {
@@ -17,7 +16,7 @@ type VideoListResponse struct {
 	Videos []*models.Video `json:"video_list,omitempty"`
 }
 
-// PublishVideoListHandler 用户视频列表
+// PublishVideoListHandler 用户发布视频列表
 func PublishVideoListHandler(c *gin.Context) {
 	tkUserIdStr, exist := c.Get("user_id")
 	userIdStr := c.Query("user_id")
@@ -44,7 +43,7 @@ func PublishVideoListHandler(c *gin.Context) {
 	})
 }
 
-// FavorVideoListHandler 用户视频列表
+// FavorVideoListHandler 用户点赞视频列表
 func FavorVideoListHandler(c *gin.Context) {
 	tkUserIdStr, exist := c.Get("user_id")
 	userIdStr := c.Query("user_id")

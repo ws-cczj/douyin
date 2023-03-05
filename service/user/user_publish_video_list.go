@@ -32,11 +32,13 @@ func (p *PublishVideoListFlow) Do() ([]*models.Video, error) {
 		return nil, err
 	}
 	if err := p.prepareData(); err != nil {
+		zap.L().Error("service user_publish_video_list prepare method exec fail!", zap.Error(err))
 		return nil, e.FailServerBusy.Err()
 	}
 	// 如果是游客访问不用去判断关注和点赞
 	if p.tkUserId != 0 {
 		if err := p.packData(); err != nil {
+			zap.L().Error("service user_publish_video_list packData method exec fail!", zap.Error(err))
 			return nil, e.FailServerBusy.Err()
 		}
 	}
@@ -70,8 +72,8 @@ func (p *PublishVideoListFlow) prepareData() (err error) {
 			}
 		}()
 	}
-	user := new(models.User)
 	// 查询目标用户信息
+	user := new(models.User)
 	if err = models.NewUserDao().QueryUserInfoById(user, p.userId); err != nil {
 		zap.L().Error("service user_video_list QueryUserInfoById method exec fail!", zap.Error(err))
 		return
@@ -82,7 +84,7 @@ func (p *PublishVideoListFlow) prepareData() (err error) {
 	go func() {
 		defer wg.Done()
 		favorCache := cache.NewFavorCache()
-		p.favorKey = utils.AddCacheKey(consts.CacheFavor, consts.CacheSetUserVideo, utils.I64toa(p.tkUserId))
+		p.favorKey = utils.AddCacheKey(consts.CacheFavor, consts.CacheSetUserFavor, utils.I64toa(p.tkUserId))
 		if err = favorCache.TTLIsExpiredCache(p.favorKey); err != nil {
 			zap.L().Warn("service user_publish_video_list favorCache.TTLIsExpiredCache method exec fail!", zap.Error(err))
 			var ids []int64
@@ -103,7 +105,7 @@ func (p *PublishVideoListFlow) prepareData() (err error) {
 				// 如果缓存无效就去数据库查找
 				var isFollow int
 				if isFollow, err = models.NewRelationDao().IsExistRelation(p.userId, user.UserId); err != nil {
-					zap.L().Error("service user_video_list NewRelationDao method exec fail!", zap.Error(err))
+					zap.L().Error("service user_publish_video_list NewRelationDao method exec fail!", zap.Error(err))
 				}
 				if isFollow == 1 {
 					user.IsFollow = true
@@ -114,7 +116,7 @@ func (p *PublishVideoListFlow) prepareData() (err error) {
 	p.data = make([]*models.Video, user.WorkCount)
 	// 根据用户id查询用户发布的视频列表信息
 	if err = models.NewVideoDao().QueryUserVideoListById(p.data, p.userId); err != nil {
-		zap.L().Error("service user_video_list QueryUserVideoListById method exec fail!", zap.Error(err))
+		zap.L().Error("service user_publish_video_list QueryUserVideoListById method exec fail!", zap.Error(err))
 		return
 	}
 	wg.Wait()

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"douyin/cache"
 	"douyin/conf"
 	"douyin/database/models"
 	"douyin/database/mongodb"
@@ -39,6 +40,7 @@ func InitDevs() {
 	// 初始化数据库
 	models.InitMysql()
 	// 初始化redis缓存
+	cache.InitRedis()
 	// 初始化mongo缓存
 	mongodb.InitMongodb()
 	//cache.InitRedis()
@@ -69,5 +71,5 @@ func goAndShutdown(r *gin.Engine) {
 	}
 	models.Close()
 	mongodb.Close()
-	//cache.Close()
+	cache.Close()
 }

@@ -15,7 +15,6 @@ func PublishHandler(c *gin.Context) {
 	playUrl := c.GetString("play_url")
 	coverUrl := c.GetString("cover_url")
 	title := c.PostForm("title")
-	zap.String("title", title)
 
 	if err := video.Publish(userId, playUrl, coverUrl, title); err != nil {
 		zap.L().Error("handlers video_publish Publish method exec fail!", zap.Error(err))

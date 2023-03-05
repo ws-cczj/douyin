@@ -10,27 +10,33 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Auth 对前端传入的token进行认证
-func Auth() gin.HandlerFunc {
+// SlackAuth 对前端传入的token进行选择性认证
+func SlackAuth(slack bool) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		auth := c.Query("token")
 		if auth == "" {
 			auth = c.DefaultPostForm("token", "")
 		}
-		if len(auth) == 0 {
-			zap.L().Error("middleware Auth token invalid!", zap.String("auth", auth))
-			common.FailWithCode(c, e.FailTokenInvalid)
-			c.Abort()
-			return
+		// 如果松紧度比较高说明需要严格验证，否则不需要严格验证
+		if slack {
+			if len(auth) == 0 {
+				zap.L().Error("middleware Auth token invalid!", zap.String("auth", auth))
+				common.FailWithCode(c, e.FailTokenInvalid)
+				c.Abort()
+				return
+			}
 		}
-		//token := strings.Fields(auth)[1]
-		claim, err := utils.VerifyToken(auth)
-		if err != nil {
-			zap.L().Error("middleware VerifyToken method fail!", zap.Error(err))
-			c.Abort()
-			return
+		// 如果有token就验证，否则放行
+		if len(auth) != 0 {
+			claim, err := utils.VerifyToken(auth)
+			if err != nil {
+				zap.L().Error("middleware VerifyToken method fail!", zap.Error(err))
+				common.FailWithCode(c, e.FailTokenVerify)
+				c.Abort()
+				return
+			}
+			c.Set("user_id", claim.UserID)
 		}
-		c.Set("user_id", claim.UserID)
 		c.Next()
 	}
 }
@@ -47,6 +53,7 @@ func VisitorAuth() gin.HandlerFunc {
 			claim, err := utils.VerifyToken(auth)
 			if err != nil {
 				zap.L().Error("middleware VerifyToken method fail!", zap.Error(err))
+				common.FailWithCode(c, e.FailTokenVerify)
 				c.Abort()
 				return
 			}

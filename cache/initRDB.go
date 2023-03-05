@@ -66,6 +66,7 @@ func InitRedis() {
 func Close() {
 	_ = rdbUser.Close()
 	_ = rdbRelation.Close()
+	_ = rdbFavor.Close()
 	_ = rdbVideo.Close()
 	_ = rdbComment.Close()
 }

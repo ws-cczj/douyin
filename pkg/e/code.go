@@ -9,13 +9,22 @@ const (
 	FailUsernameLimit
 	FailPasswordNotCompare
 	FailPasswordLimit
-	FailParamInvalid
+	FailVideoNotExist
+	FailVideoIllegal
+	FailVideoTitleCantNull
+	FailVideoTitleLimit
+	FailCommentNotExist
+	FailCommentLenLimit
+	FailMessageCantNULL
+	FailMessageLenLimit
+	FailRelationNotFriend
+	FailCantFollowYourself
+	FailRepeatAction
 	FailTokenExpired
 	FailTokenVerify
 	FailTokenInvalid
-	FailVideoIllegal
 	FailServerBusy
-	FailCacheExpried
+	FailCacheExpired
 	FailNotKnow
 )
 
@@ -25,13 +34,22 @@ var failMsg = map[Code]string{
 	FailUsernameLimit:      "username len overflow! (should < 32)",
 	FailPasswordNotCompare: "user password not compare!",
 	FailPasswordLimit:      "password len overflow! (should < 20)",
-	FailParamInvalid:       "param invalid!",
+	FailVideoNotExist:      "video already delete!",
+	FailVideoIllegal:       "video format is incorrect!",
+	FailVideoTitleCantNull: "video title cant null!",
+	FailVideoTitleLimit:    "title len overflow! (should < 200)",
+	FailCommentNotExist:    "comment already delete!",
+	FailCommentLenLimit:    "comment len overflow! (should < 500)",
+	FailMessageCantNULL:    "message content cant null!",
+	FailMessageLenLimit:    "message len overflow! (should < 2000)",
+	FailRelationNotFriend:  "he/she still not you friend!",
+	FailCantFollowYourself: "cant to follow yourself!",
+	FailRepeatAction:       "action operator repeat!",
 	FailTokenExpired:       "user token time expired!",
 	FailTokenVerify:        "user token verify fail!",
 	FailTokenInvalid:       "token invalid!",
-	FailVideoIllegal:       "video format is incorrect!",
 	FailServerBusy:         "server busy!",
-	FailCacheExpried:       "cache ttl < 0",
+	FailCacheExpired:       "cache expired! (ttl < 0)",
 	FailNotKnow:            "not know error!",
 }
 

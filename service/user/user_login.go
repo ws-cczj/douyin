@@ -37,10 +37,12 @@ func (l *LoginFlow) Do() (*LoginResponse, error) {
 		return nil, err
 	}
 	if err := l.prepareData(); err != nil {
-		return nil, err
+		zap.L().Error("service user_login prepareData method exec fail!", zap.Error(err))
+		return nil, e.FailServerBusy.Err()
 	}
 	if err := l.packData(); err != nil {
-		return nil, err
+		zap.L().Error("service user_login packData method exec fail!", zap.Error(err))
+		return nil, e.FailServerBusy.Err()
 	}
 	return l.data, nil
 }
@@ -88,7 +90,6 @@ func (l *LoginFlow) prepareData() (err error) {
 	// 生成token
 	if l.token, err = utils.GenToken(l.userId); err != nil {
 		zap.L().Error("service user_login utils.GenToken method exec fail!", zap.Error(err))
-		err = e.FailServerBusy.Err()
 	}
 	return
 }

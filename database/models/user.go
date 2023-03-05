@@ -88,6 +88,10 @@ func (*UserDao) QueryUserInfoById(user *User, userId int64) (err error) {
 func (*UserDao) QueryUserFollows(userId int64) (follows int64, err error) {
 	qStr := `select follow_count from users where user_id = ?`
 	if err = db.GetContext(ctx, &follows, qStr, userId); err != nil {
+		if err == sql.ErrNoRows {
+			zap.L().Warn("models user get follows data is null!")
+			return 0, nil
+		}
 		zap.L().Error("models user GetContext method exec fail!", zap.Error(err))
 	}
 	return

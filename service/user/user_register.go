@@ -33,10 +33,12 @@ func (r *RegisterFlow) Do() (*LoginResponse, error) {
 		return nil, err
 	}
 	if err := r.updateData(); err != nil {
+		zap.L().Error("service user_register updateData method exec fail!", zap.Error(err))
 		return nil, err
 	}
 	if err := r.packData(); err != nil {
-		return nil, err
+		zap.L().Error("service user_register packData method exec fail!", zap.Error(err))
+		return nil, e.FailServerBusy.Err()
 	}
 	return r.data, nil
 }
@@ -77,12 +79,12 @@ func (r *RegisterFlow) updateData() (err error) {
 	// 3. 注册执行
 	if err = models.NewUserDao().AddUser(r.userId, r.username, r.password); err != nil {
 		zap.L().Error("service user_register AddUser method exec fail", zap.Error(err))
-		return e.FailServerBusy.Err()
+		return
 	}
 	// 4. 生成token
 	if r.token, err = utils.GenToken(r.userId); err != nil {
 		zap.L().Error("service user_register utils.GenToken method exec fail!", zap.Error(err))
-		return e.FailServerBusy.Err()
+		return
 	}
 	// 5. 初始化用户缓存数据
 	//go cache.NewRelationCache().SAddRegisterActionUserFollowAndFollower(r.userId)

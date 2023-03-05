@@ -24,17 +24,16 @@ func InitRouter(r *gin.Engine) {
 		// basic apis
 		v1.POST("/user/register/", user.RegisterHandler)
 		v1.POST("/user/login/", user.LoginHandler)
-		// 游客判断
 		{
-			v1.GET("/feed/", middleware.VisitorAuth(), video.FeedHandler)
-			v1.GET("/publish/list/", middleware.VisitorAuth(), user.PublishVideoListHandler)
-			v1.GET("/favorite/list/", middleware.VisitorAuth(), user.FavorVideoListHandler)
-			v1.GET("/comment/list/", middleware.VisitorAuth(), video.CommentListHandler)
-			v1.GET("/relation/follow/list/", middleware.VisitorAuth(), relation.UserFollowListHandler)
-			v1.GET("/relation/follower/list/", middleware.VisitorAuth(), relation.UserFollowerListHandler)
+			v1.GET("/feed/", middleware.SlackAuth(false), video.FeedHandler)
+			v1.GET("/publish/list/", middleware.SlackAuth(false), user.PublishVideoListHandler)
+			v1.GET("/favorite/list/", middleware.SlackAuth(false), user.FavorVideoListHandler)
+			v1.GET("/comment/list/", middleware.SlackAuth(false), video.CommentListHandler)
+			v1.GET("/relation/follow/list/", middleware.SlackAuth(false), relation.UserFollowListHandler)
+			v1.GET("/relation/follower/list/", middleware.SlackAuth(false), relation.UserFollowerListHandler)
 		}
 		// 加入JWT用户认证
-		v1.Use(middleware.Auth())
+		v1.Use(middleware.SlackAuth(true))
 		{
 			v1.GET("/user/", user.InfoHandler)
 			v1.GET("/relation/friend/list/", relation.UserFriendListHandler)

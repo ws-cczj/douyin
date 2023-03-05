@@ -1,9 +1,11 @@
 package favor
 
 import (
-	models2 "douyin/database/models"
-	"errors"
-
+	"douyin/cache"
+	"douyin/consts"
+	models "douyin/database/models"
+	"douyin/pkg/e"
+	"douyin/pkg/utils"
 	"go.uber.org/zap"
 )
 
@@ -27,51 +29,65 @@ func (f *FavorVideoFlow) Do() error {
 		return err
 	}
 	if err := f.updateData(); err != nil {
-		return err
+		zap.L().Error("service favor_video updateData method exec fail!", zap.Error(err))
+		return e.FailServerBusy.Err()
 	}
 	return nil
 }
 
 func (f *FavorVideoFlow) checkNum() (err error) {
 	if f.userId == 0 || f.videoId == 0 {
-		return errors.New("用户或视频不存在")
+		return e.FailServerBusy.Err()
+	}
+	if f.action != "1" && f.action != "2" {
+		return e.FailNotKnow.Err()
 	}
 	// 1. 检查视频是否存在
-	isExist, err := models2.NewVideoDao().IsExistVideoById(f.videoId)
-	if err != nil {
+	var isExist bool
+	if isExist, err = models.NewVideoDao().IsExistVideoById(f.videoId); err != nil {
 		zap.L().Error("service favor_video IsExistVideoById method exec fail!", zap.Error(err))
-		return
+		return e.FailServerBusy.Err()
 	}
 	if !isExist {
 		zap.L().Error("service favor_video videoId not exist!", zap.Int64("videoId", f.videoId))
-		return errors.New("视频不存在")
+		return e.FailVideoNotExist.Err()
 	}
 	// 2. 检查数据是否合法
-	if f.isFavor, err = models2.NewFavorDao().IsExistFavor(f.userId, f.videoId); err != nil {
+	if f.isFavor, err = models.NewFavorDao().IsExistFavor(f.userId, f.videoId); err != nil {
 		zap.L().Error("service favor_video IsExistFavor method exec fail!")
-		return
+		return e.FailServerBusy.Err()
 	}
 	if f.action == "1" && f.isFavor == 1 || f.action == "2" && f.isFavor < 1 {
 		zap.L().Warn("service favor_video action illegal")
-		return errors.New("无效操作")
+		return e.FailRepeatAction.Err()
 	}
 	return
 }
 
 func (f *FavorVideoFlow) updateData() (err error) {
-	switch f.action {
-	case "1":
-		if err = models2.NewFavorDao().AddUserFavorVideoInfoById(f.userId, f.videoId, f.isFavor); err != nil {
+	if f.action == "1" {
+		if err = models.NewFavorDao().AddUserFavorVideoInfoById(f.userId, f.videoId, f.isFavor); err != nil {
 			zap.L().Error("service favor_video AddUserFavorVideoInfoById method exec fail!")
 			return
 		}
-	case "2":
-		if err = models2.NewFavorDao().SubUserFavorsInfoById(f.userId, f.videoId, f.isFavor); err != nil {
+	} else {
+		if err = models.NewFavorDao().SubUserFavorsInfoById(f.userId, f.videoId, f.isFavor); err != nil {
 			zap.L().Error("service favor_video SubUserFavorsInfoById method exec fail!")
 			return
 		}
-	default:
-		return errors.New("操作非法")
 	}
-	return
+	// 保证缓存一致性，先删除后更新缓存
+	go func() {
+		favorKey := utils.AddCacheKey(consts.CacheFavor, consts.CacheSetUserFavor, utils.I64toa(f.userId))
+		cache.NewFavorCache().DelCache(favorKey)
+
+		var videos []int64
+		if videos, err = models.NewFavorDao().QueryUserFavorVideoList(f.userId); err != nil {
+			zap.L().Error("service favor_video QueryUserFavorVideoList method exec fail!", zap.Error(err))
+		}
+		if len(videos) > 0 {
+			cache.NewFavorCache().SAddReSetUserFavorVideo(favorKey, videos)
+		}
+	}()
+	return nil
 }

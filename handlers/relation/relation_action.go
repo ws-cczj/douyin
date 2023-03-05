@@ -30,7 +30,7 @@ func UserActionHandler(c *gin.Context) {
 			return
 		}
 	default:
-		common.FailWithCode(c, e.FailParamInvalid)
+		common.FailWithCode(c, e.FailServerBusy)
 		return
 	}
 	common.SuccessWithMsg(c, "")
