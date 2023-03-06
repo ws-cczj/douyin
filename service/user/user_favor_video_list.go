@@ -72,16 +72,14 @@ func (f *FavorVideoListFlow) prepareData() (err error) {
 		zap.L().Warn("service user_favor_video_list SCardQueryUserFavorVideos method exec fail!", zap.Error(err))
 		if favors, err = models.NewUserDao().QueryUserFavorVideos(f.userId); err != nil {
 			zap.L().Error("service user_favor_video_list QueryUserFavorVideos method exec fail!", zap.Error(err))
-			return
 		}
 	}
 	// 如果没有喜欢直接返回
-	if favors == 0 {
-		return
-	}
-	f.data = make([]*models.Video, favors)
-	if err = models.NewVideoDao().QueryVideoListWithFavors(f.data, f.userId); err != nil {
-		zap.L().Error("service user_favor_video_list QueryVideoListWithFavors method exec fail!", zap.Error(err))
+	if favors > 0 || err != nil {
+		f.data = make([]*models.Video, favors)
+		if err = models.NewVideoDao().QueryVideoListWithFavors(f.data, f.userId); err != nil {
+			zap.L().Error("service user_favor_video_list QueryVideoListWithFavors method exec fail!", zap.Error(err))
+		}
 	}
 	return
 }

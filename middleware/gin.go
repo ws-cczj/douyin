@@ -62,7 +62,7 @@ func GinRecovery() gin.HandlerFunc {
 				}
 				split := strings.Split(string(debug.Stack()), "\n\t")
 				zap.L().Error("[Recovery from panic]", zap.Any("error", err))
-				zap.L().Error("[STACK DEBUG]", zap.String("stack", split[1]))
+				zap.L().Error("[STACK DEBUG]", zap.String("stack", split[2]))
 				c.AbortWithStatus(http.StatusInternalServerError)
 			}
 		}()

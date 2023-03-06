@@ -96,7 +96,7 @@ func (v *VideoCommentFlow) updateData() (err error) {
 	}
 	// 保证缓存一致性 先删除后更新数据
 	go func() {
-		videoKey := utils.AddCacheKey(consts.CacheVideo, consts.CacheStringVideoFavor, utils.I64toa(v.videoId))
+		videoKey := utils.AddCacheKey(consts.CacheVideo, consts.CacheStringVideoComment, utils.I64toa(v.videoId))
 		cache.NewVideoCache().DelCache(videoKey)
 
 		var commentIds int64

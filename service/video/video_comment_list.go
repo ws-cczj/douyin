@@ -33,9 +33,11 @@ func (c *CommentListFlow) Do() ([]*models.Comment, error) {
 		zap.L().Error("service video_comment_list prepareData method exec fail!", zap.Error(err))
 		return nil, e.FailServerBusy.Err()
 	}
-	if err := c.packData(); err != nil {
-		zap.L().Error("service video_comment_list prepareData method exec fail!", zap.Error(err))
-		return nil, e.FailServerBusy.Err()
+	if len(c.data) > 0 {
+		if err := c.packData(); err != nil {
+			zap.L().Error("service video_comment_list prepareData method exec fail!", zap.Error(err))
+			return nil, e.FailServerBusy.Err()
+		}
 	}
 	return c.data, nil
 }
@@ -58,29 +60,24 @@ func (c *CommentListFlow) checkNum() (err error) {
 
 func (c *CommentListFlow) prepareData() (err error) {
 	// 找到该视频下的评论数量
-	videoKey := utils.AddCacheKey(consts.CacheVideo, consts.CacheStringVideoFavor, utils.I64toa(c.videoId))
+	videoKey := utils.AddCacheKey(consts.CacheVideo, consts.CacheStringVideoComment, utils.I64toa(c.videoId))
 	var comments int64
 	if comments, err = cache.NewVideoCache().GetEXVideoComments(videoKey); err != nil {
-		zap.L().Error("service video_comment_list GetEXVideoComments method exec fail!", zap.Error(err))
 		if comments, err = models.NewVideoDao().QueryVideoCommentsById(c.videoId); err != nil {
 			zap.L().Error("service video_comment_list QueryVideoCommentsById method exec fail!", zap.Error(err))
 			return
 		}
+		// 重新设置缓存
+		go cache.NewVideoCache().SetEXResetVideoComments(videoKey, comments)
 	}
 	c.data = make([]*models.Comment, comments)
 	return
 }
 
 func (c *CommentListFlow) packData() (err error) {
-	if len(c.data) < 1 {
-		return nil
-	}
 	// 根据视频id查到该视频下所有评论信息
 	if err = models.NewCommentDao().QueryVideoCommentListById(c.data, c.videoId); err != nil {
 		zap.L().Error("service video_comment_list QueryVideoCommentListById method exec fail!", zap.Error(err))
-	}
-	if c.userId == 0 {
-		return
 	}
 	// 判断当前用户与评论用户之间的关系
 	relationDao := models.NewRelationDao()
@@ -91,15 +88,18 @@ func (c *CommentListFlow) packData() (err error) {
 	for _, comment := range c.data {
 		go func(ct *models.Comment) {
 			defer wg.Done()
-			if ct.IsFollow, err = relationCache.SIsMemberIsExistRelation(followKey, ct.UserId); err != nil {
-				zap.L().Error("service video_comment SIsMemberIsExistRelation method exec fail!", zap.Error(err))
-				// 如果缓存无效就去数据库查找
-				var isFollow int
-				if isFollow, err = relationDao.IsExistRelation(c.userId, ct.UserId); err != nil {
-					zap.L().Error("service video_comment NewRelationDao method exec fail!", zap.Error(err))
-				}
-				if isFollow == 1 {
-					ct.IsFollow = true
+			// 如果不是游客访问就去判断关系
+			if c.userId != 0 {
+				if ct.IsFollow, err = relationCache.SIsMemberIsExistRelation(followKey, ct.UserId); err != nil {
+					zap.L().Error("service video_comment SIsMemberIsExistRelation method exec fail!", zap.Error(err))
+					// 如果缓存无效就去数据库查找
+					var isFollow int
+					if isFollow, err = relationDao.IsExistRelation(c.userId, ct.UserId); err != nil {
+						zap.L().Error("service video_comment NewRelationDao method exec fail!", zap.Error(err))
+					}
+					if isFollow == 1 {
+						ct.IsFollow = true
+					}
 				}
 			}
 			ct.CreateAt = utils.FormatTime(ct.CreateTime)

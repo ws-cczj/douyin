@@ -36,7 +36,7 @@ func (p *PublishVideoListFlow) Do() ([]*models.Video, error) {
 		return nil, e.FailServerBusy.Err()
 	}
 	// 如果是游客访问不用去判断关注和点赞
-	if p.tkUserId != 0 {
+	if p.tkUserId != 0 && len(p.data) > 0 {
 		if err := p.packData(); err != nil {
 			zap.L().Error("service user_publish_video_list packData method exec fail!", zap.Error(err))
 			return nil, e.FailServerBusy.Err()
@@ -56,12 +56,12 @@ func (p *PublishVideoListFlow) prepareData() (err error) {
 	var wg sync.WaitGroup
 	if p.tkUserId != 0 {
 		// 只有不为0的情况下才add，否则不进行add
-		wg.Add(1)
+		wg.Add(2)
 		// 查询用户关注缓存是否过期, 如果过期则对缓存进行重置操作
 		go func() {
 			defer wg.Done()
-			relationCache := cache.NewRelationCache()
 			p.followKey = utils.AddCacheKey(consts.CacheRelation, consts.CacheSetUserFollow, utils.I64toa(p.tkUserId))
+			relationCache := cache.NewRelationCache()
 			if err = relationCache.TTLIsExpiredCache(p.followKey); err != nil {
 				zap.L().Warn("service user_publish_video_list relationCache.TTLIsExpiredCache method exec fail!", zap.Error(err))
 				var ids []int64
@@ -69,6 +69,20 @@ func (p *PublishVideoListFlow) prepareData() (err error) {
 					zap.L().Error("service user_publish_video_list QueryUserFollowIds method exec fail!", zap.Error(err))
 				}
 				relationCache.SAddResetActionUserFollowOrFollower(p.followKey, ids)
+			}
+		}()
+		// 预热用户点赞缓存缓存
+		go func() {
+			defer wg.Done()
+			favorCache := cache.NewFavorCache()
+			p.favorKey = utils.AddCacheKey(consts.CacheFavor, consts.CacheSetUserFavor, utils.I64toa(p.tkUserId))
+			if err = favorCache.TTLIsExpiredCache(p.favorKey); err != nil {
+				zap.L().Warn("service user_publish_video_list favorCache.TTLIsExpiredCache method exec fail!", zap.Error(err))
+				var ids []int64
+				if ids, err = models.NewFavorDao().QueryUserFavorVideoList(p.tkUserId); err != nil {
+					zap.L().Error("service user_publish_video_list QueryUserFavorVideoList method exec fail!", zap.Error(err))
+				}
+				favorCache.SAddReSetUserFavorVideo(p.favorKey, ids)
 			}
 		}()
 	}
@@ -79,23 +93,8 @@ func (p *PublishVideoListFlow) prepareData() (err error) {
 		return
 	}
 	wg.Wait()
-	// 更新用户点赞缓存缓存
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		favorCache := cache.NewFavorCache()
-		p.favorKey = utils.AddCacheKey(consts.CacheFavor, consts.CacheSetUserFavor, utils.I64toa(p.tkUserId))
-		if err = favorCache.TTLIsExpiredCache(p.favorKey); err != nil {
-			zap.L().Warn("service user_publish_video_list favorCache.TTLIsExpiredCache method exec fail!", zap.Error(err))
-			var ids []int64
-			if ids, err = models.NewFavorDao().QueryUserFavorVideoList(p.tkUserId); err != nil {
-				zap.L().Error("service user_publish_video_list QueryUserFavorVideoList method exec fail!", zap.Error(err))
-			}
-			favorCache.SAddReSetUserFavorVideo(p.favorKey, ids)
-		}
-	}()
 	// 判断当前查询用户是否关注了目标用户
-	if p.tkUserId != user.UserId {
+	if p.tkUserId != 0 && p.tkUserId != user.UserId {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()

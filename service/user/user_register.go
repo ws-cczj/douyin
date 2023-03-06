@@ -84,11 +84,7 @@ func (r *RegisterFlow) updateData() (err error) {
 	// 4. 生成token
 	if r.token, err = utils.GenToken(r.userId); err != nil {
 		zap.L().Error("service user_register utils.GenToken method exec fail!", zap.Error(err))
-		return
 	}
-	// 5. 初始化用户缓存数据
-	//go cache.NewRelationCache().SAddRegisterActionUserFollowAndFollower(r.userId)
-	//go cache.NewFavorCache().SAddUserFavorVideo(r.userId, -1)
 	return
 }
 

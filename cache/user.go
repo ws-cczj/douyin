@@ -2,10 +2,8 @@ package cache
 
 import (
 	"douyin/consts"
-	"douyin/pkg/utils"
 	"sync"
 
-	"github.com/go-redis/redis/v8"
 	"go.uber.org/zap"
 )
 
@@ -22,38 +20,6 @@ func NewUserCache() *UserCache {
 		userCache = new(UserCache)
 	})
 	return userCache
-}
-
-// SAddPublishVideo 发布视频
-func (*UserCache) SAddPublishVideo(userId, videoId int64) (err error) {
-	userVideoKey := utils.AddCacheKey(consts.CacheUser, consts.CacheSetUserVideo, utils.I64toa(userId))
-
-	_, err = rdbUser.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
-		pipe.SAdd(ctx, userVideoKey, videoId)
-		pipe.Expire(ctx, userVideoKey, consts.CacheExpired)
-		return nil
-	})
-	return
-}
-
-// SMembersQueryUserVideoList 查询用户发布的视频列表
-func (*UserCache) SMembersQueryUserVideoList(userId int64) ([]int64, error) {
-	userVideoKey := utils.AddCacheKey(consts.CacheUser, consts.CacheSetUserVideo, utils.I64toa(userId))
-	cmders, err := rdbUser.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
-		pipe.SMembers(ctx, userVideoKey)
-		pipe.Expire(ctx, userVideoKey, consts.CacheExpired)
-		return nil
-	})
-	if err != nil {
-		zap.L().Error("cache user SMembersUserVideoList method exec fail!", zap.Error(err))
-		return nil, err
-	}
-	vals := cmders[0].(*redis.StringSliceCmd).Val()
-	videoList := make([]int64, len(vals))
-	for _, val := range vals {
-		videoList = append(videoList, utils.AtoI64(val))
-	}
-	return videoList, nil
 }
 
 // SAddReSetUserVideoList 用户发布视频缓存重置

@@ -14,7 +14,7 @@ import (
 
 type UserListResponse struct {
 	common.Response
-	User []*models.User `json:"user_list"`
+	User []*models.User `json:"user_list,omitempty"`
 }
 
 // UserFollowListHandler 用户关注列表

@@ -7,8 +7,6 @@ import (
 	"sync"
 
 	"go.uber.org/zap"
-
-	"github.com/go-redis/redis/v8"
 )
 
 type RelationCache struct {
@@ -29,59 +27,7 @@ func NewRelationCache() *RelationCache {
 // StringSingleSignOn 限制单点用户登录
 //func (*UserCache) StringSingleSignOn() error {return nil}
 
-// SAddRegisterActionUserFollowAndFollower 注册用户关注行为
-func (*RelationCache) SAddRegisterActionUserFollowAndFollower(userId int64) (err error) {
-	userFollowKey := utils.AddCacheKey(consts.CacheRelation, consts.CacheSetUserFollow, utils.I64toa(userId))
-	userFollowerKey := utils.AddCacheKey(consts.CacheRelation, consts.CacheSetUserFollower, utils.I64toa(userId))
-
-	// 启动重试机制
-	for i := 0; i < consts.CacheMaxTryTimes; i++ {
-		if _, err = rdbRelation.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
-			pipe.SAdd(ctx, userFollowKey, -1)
-			pipe.SAdd(ctx, userFollowerKey, -1)
-			pipe.Expire(ctx, userFollowKey, consts.CacheExpired)
-			pipe.Expire(ctx, userFollowerKey, consts.CacheExpired)
-			return nil
-		}); err == nil {
-			break
-		}
-		zap.L().Error("cache relation SAddRegisterActionUserFollowAndFollower method exec fail!",
-			zap.Error(err),
-			zap.Int("try again times", i))
-	}
-	return
-}
-
-// SAddActionUserFollowAndFollower 用户关注行为
-func (*RelationCache) SAddActionUserFollowAndFollower(userId, toUserId int64) (err error) {
-	userFollowKey := utils.AddCacheKey(consts.CacheRelation, consts.CacheSetUserFollow, utils.I64toa(userId))
-	userFollowerKey := utils.AddCacheKey(consts.CacheRelation, consts.CacheSetUserFollower, utils.I64toa(toUserId))
-
-	if _, err = rdbRelation.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
-		pipe.SAdd(ctx, userFollowKey, toUserId)
-		pipe.SAdd(ctx, userFollowerKey, userId)
-		pipe.Expire(ctx, userFollowKey, consts.CacheExpired)
-		pipe.Expire(ctx, userFollowerKey, consts.CacheExpired)
-		return nil
-	}); err != nil {
-		zap.L().Error("cache relation SAddActionUserFollowAndFollower method exec fail!", zap.Error(err))
-	}
-	return
-}
-
-// SRemActionUserFollowAndFollower 用户取关行为
-func (*RelationCache) SRemActionUserFollowAndFollower(userId, toUserId int64, userFollowKey, userFollowerKey string) (err error) {
-	_, err = rdbRelation.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
-		pipe.SRem(ctx, userFollowKey, toUserId)
-		pipe.SRem(ctx, userFollowerKey, userId)
-		pipe.Expire(ctx, userFollowKey, consts.CacheExpired)
-		pipe.Expire(ctx, userFollowerKey, consts.CacheExpired)
-		return nil
-	})
-	return
-}
-
-// SAddResetActionUserFollowOrFollower 用户多次关注行为缓存重置
+// SAddResetActionUserFollowOrFollower 用户关注行为缓存重置
 func (r *RelationCache) SAddResetActionUserFollowOrFollower(key string, toUserIds []int64) {
 	if key != "" {
 		pipe := rdbRelation.Pipeline()
@@ -102,7 +48,6 @@ func (r *RelationCache) SAddResetActionUserFollowOrFollower(key string, toUserId
 // SCardQueryUserFollows 查询用户关注数
 func (*RelationCache) SCardQueryUserFollows(key string) (follows int64, err error) {
 	if follows, err = rdbRelation.SCard(ctx, key).Result(); follows > 0 {
-		go rdbRelation.Expire(ctx, key, consts.CacheExpired)
 		return follows - 1, nil
 	}
 	if err != nil {
@@ -112,10 +57,8 @@ func (*RelationCache) SCardQueryUserFollows(key string) (follows int64, err erro
 }
 
 // SCardQueryUserFollowers 查询用户粉丝数
-func (*RelationCache) SCardQueryUserFollowers(userId int64) (followers int64, err error) {
-	userFollowerKey := utils.AddCacheKey(consts.CacheRelation, consts.CacheSetUserFollower, utils.I64toa(userId))
-	if followers, err = rdbRelation.SCard(ctx, userFollowerKey).Result(); followers > 0 {
-		go rdbRelation.Expire(ctx, userFollowerKey, consts.CacheExpired)
+func (*RelationCache) SCardQueryUserFollowers(key string) (followers int64, err error) {
+	if followers, err = rdbRelation.SCard(ctx, key).Result(); followers > 0 {
 		return followers - 1, nil
 	}
 	if err != nil {
@@ -138,7 +81,7 @@ func (r *RelationCache) TTLIsExpiredCache(key string) error {
 		return e.FailNotKnow.Err()
 	}
 	if t := rdbRelation.TTL(ctx, key).Val(); t < 1 {
-		zap.L().Error("cache relation ttl < 0", zap.String("key", key))
+		zap.L().Warn("cache relation ttl < 0", zap.String("key", key))
 		return e.FailCacheExpired.Err()
 	}
 	// 如果缓存没有过期就去续约

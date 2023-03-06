@@ -57,9 +57,7 @@ func (p *PublishFlow) updateData() (err error) {
 		if videoIds, err = models.NewVideoDao().QueryUserVideosById(p.userId); err != nil {
 			zap.L().Error("service video_publish QueryUserVideosById method exec fail!", zap.Error(err))
 		}
-		if len(videoIds) > 0 {
-			cache.NewUserCache().SAddReSetUserVideoList(userKey, videoIds)
-		}
+		cache.NewUserCache().SAddReSetUserVideoList(userKey, videoIds)
 	}()
 	return nil
 }

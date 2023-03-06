@@ -85,9 +85,7 @@ func (f *FavorVideoFlow) updateData() (err error) {
 		if videos, err = models.NewFavorDao().QueryUserFavorVideoList(f.userId); err != nil {
 			zap.L().Error("service favor_video QueryUserFavorVideoList method exec fail!", zap.Error(err))
 		}
-		if len(videos) > 0 {
-			cache.NewFavorCache().SAddReSetUserFavorVideo(favorKey, videos)
-		}
+		cache.NewFavorCache().SAddReSetUserFavorVideo(favorKey, videos)
 	}()
 	return nil
 }

@@ -14,7 +14,7 @@ import (
 
 type CommentListResponse struct {
 	common.Response
-	Comment []*models.Comment `json:"comment_list"`
+	Comment []*models.Comment `json:"comment_list,omitempty"`
 }
 
 func CommentListHandler(c *gin.Context) {

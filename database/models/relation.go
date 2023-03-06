@@ -81,10 +81,10 @@ func (*RelationDao) QueryUserFollowerList(user []*User, toUserId int64) (err err
 }
 
 // QueryUserFollowerIds 查询用户的粉丝列表ids
-func (*RelationDao) QueryUserFollowerIds(toUserId int64) (ids []int64, err error) {
+func (*RelationDao) QueryUserFollowerIds(userId int64) (ids []int64, err error) {
 	ids = []int64{}
-	qStr := `select user_id from user_relations where user_id = ? AND is_follow = ?`
-	if err = db.SelectContext(ctx, &ids, qStr, toUserId, 1); err != nil {
+	qStr := `select user_id from user_relations where to_user_id = ? AND is_follow = ?`
+	if err = db.SelectContext(ctx, &ids, qStr, userId, 1); err != nil {
 		zap.L().Error("models relation follower ids query fail!", zap.Error(err))
 	}
 	return

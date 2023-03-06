@@ -21,6 +21,8 @@ type UserCancelFollowFlow struct {
 	isFollow, isFollow2 int
 
 	userId, toUserId int64
+
+	followKey string
 }
 
 func (u *UserCancelFollowFlow) Do() error {
@@ -28,6 +30,7 @@ func (u *UserCancelFollowFlow) Do() error {
 		return err
 	}
 	if err := u.updateData(); err != nil {
+		zap.L().Error("service relation_cancel_follow updateData method exec fail!", zap.Error(err))
 		return e.FailServerBusy.Err()
 	}
 	return nil
@@ -38,11 +41,11 @@ func (u *UserCancelFollowFlow) checkNum() (err error) {
 		return e.FailServerBusy.Err()
 	}
 	// 查找缓存
-	key := utils.AddCacheKey(consts.CacheRelation, consts.CacheSetUserFollow, utils.I64toa(u.userId))
+	u.followKey = utils.AddCacheKey(consts.CacheRelation, consts.CacheSetUserFollow, utils.I64toa(u.userId))
 	relationCache := cache.NewRelationCache()
-	if err = relationCache.TTLIsExpiredCache(key); err == nil {
+	if err = relationCache.TTLIsExpiredCache(u.followKey); err == nil {
 		var isFollow bool
-		if isFollow, err = relationCache.SIsMemberIsExistRelation(key, u.toUserId); err == nil {
+		if isFollow, err = relationCache.SIsMemberIsExistRelation(u.followKey, u.toUserId); err == nil {
 			if isFollow {
 				u.isFollow = 1
 				return
@@ -54,10 +57,10 @@ func (u *UserCancelFollowFlow) checkNum() (err error) {
 	// 如果redis缓存获取失败或者缓存过期就去数据库查找
 	if u.isFollow, err = models.NewRelationDao().IsExistRelation(u.userId, u.toUserId); err != nil {
 		zap.L().Error("service relation_follow IsExistRelation method exec fail!", zap.Error(err))
-		err = e.FailServerBusy.Err()
+		return e.FailServerBusy.Err()
 	}
 	if u.isFollow != 1 {
-		err = e.FailRepeatAction.Err()
+		return e.FailRepeatAction.Err()
 	}
 	return
 }
@@ -74,19 +77,25 @@ func (u *UserCancelFollowFlow) updateData() (err error) {
 		zap.L().Error("service relation_follow Action2UserRelation method exec fail!", zap.Error(err))
 		return
 	}
-	// 缓存一致性，先删除缓存，再更新数据
+	relationCache := cache.NewRelationCache()
+	// 缓存一致性，先删除缓存，再更新数据 这里更新的是当前用户的关注
 	go func() {
-		key := utils.AddCacheKey(consts.CacheRelation, consts.CacheSetUserFollow, utils.I64toa(u.userId))
-		relationCache := cache.NewRelationCache()
+		relationCache.DelCache(u.followKey)
+		var ids []int64
+		if ids, err = relationDao.QueryUserFollowIds(u.userId); err != nil {
+			zap.L().Error("service relation_follow QueryUserFollowIds method exec fail!", zap.Error(err))
+		}
+		relationCache.SAddResetActionUserFollowOrFollower(u.followKey, ids)
+	}()
+	// 更新目标用户的粉丝缓存
+	go func() {
+		key := utils.AddCacheKey(consts.CacheRelation, consts.CacheSetUserFollower, utils.I64toa(u.toUserId))
 		relationCache.DelCache(key)
 		var ids []int64
-		if ids, err = models.NewRelationDao().QueryUserFollowIds(u.userId); err != nil {
-			zap.L().Error("service relation_follow QueryUserFollowIds method exec fail!", zap.Error(err))
-			err = nil
+		if ids, err = relationDao.QueryUserFollowerIds(u.toUserId); err != nil {
+			zap.L().Error("service relation_follow QueryUserFollowerIds method exec fail!", zap.Error(err))
 		}
-		if len(ids) > 0 {
-			relationCache.SAddResetActionUserFollowOrFollower(key, ids)
-		}
+		relationCache.SAddResetActionUserFollowOrFollower(key, ids)
 	}()
-	return
+	return nil
 }

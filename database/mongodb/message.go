@@ -10,12 +10,12 @@ import (
 )
 
 type Message struct {
-	Id       int64     `json:"id" bson:"_id"`
-	UserId   int64     `json:"from_user_id" bson:"user_id"`
-	ToUserId int64     `json:"to_user_id" bson:"to_user_id"`
-	Content  string    `json:"content" bson:"content"`
-	Action   string    `json:"-" bson:"action"`
-	CreateAt time.Time `json:"create_time" bson:"create_at"`
+	Id       int64  `json:"id" bson:"_id"`
+	UserId   int64  `json:"from_user_id" bson:"user_id"`
+	ToUserId int64  `json:"to_user_id" bson:"to_user_id"`
+	CreateAt int64  `json:"create_time" bson:"create_at"`
+	Content  string `json:"content" bson:"content"`
+	Action   string `json:"-" bson:"action"`
 }
 
 var messageDao *MessageDao
@@ -39,28 +39,28 @@ func (*MessageDao) InsertOneMessage(id, userId, toUserId int64, content, action 
 			"to_user_id":   toUserId,
 			"content":      content,
 			"action":       action,
-			"create_at":    time.Now().Format("2006-01-02 15:04:05")})
+			"create_at":    time.Now().Unix()})
 	return err
 }
 
 // FindMessage 查询多条消息
 func (*MessageDao) FindMessage(userId, toUserId int64) (messages []*Message, err error) {
 	var cursor *mongo.Cursor
-	defer cursor.Close(ctx)
+	defer func() {
+		if cursor != nil {
+			cursor.Close(ctx)
+		}
+	}()
 	if cursor, err = message().Find(ctx,
-		bson.M{"$or": []bson.M{{"user_id": userId, "to_user_id": toUserId},
-			{"user_id": toUserId, "to_user_id": userId}}},
+		bson.M{"$or": []bson.M{{"from_user_id": userId, "to_user_id": toUserId, "action": "1"},
+			{"from_user_id": toUserId, "to_user_id": userId, "action": "1"}}},
 		options.Find().SetSort(bson.M{"create_at": 1})); err != nil {
 		zap.L().Error("mongodb message FindMessage method exec fail!", zap.Error(err))
-		return nil, err
+		return
 	}
-	messages = make([]*Message, 0)
-	for cursor.Next(ctx) {
-		var msg *Message
-		if err = cursor.Decode(&msg); err != nil {
-			zap.L().Warn("mongodb message Decode fail!", zap.Error(err))
-		}
-		messages = append(messages, msg)
+	messages = []*Message{}
+	if err = cursor.All(ctx, &messages); err != nil {
+		zap.L().Error("mongodb message All method exec fail!", zap.Error(err))
 	}
-	return messages, nil
+	return
 }

@@ -15,8 +15,8 @@ const (
 	JWTIssuer         = "cczj"            // 签发人
 	JWTSecret         = "cczj"            // 密钥
 
-	CacheExpired            = 30 * 24 * 60 * 60 * time.Second // 缓存统一过期时间 30天
-	CacheMaxTryTimes        = 3                               // 缓存最大尝试次数
+	CacheExpired            = 30 * 24 * 60 * 60 * time.Second // 缓存统一过期时间 30天, 必须加time.Second
+	CacheMaxTryTimes        = 3                               // 最大重试次数
 	CacheDouyin             = "douyin:"                       // 抖音缓存
 	CacheUser               = "user:"                         // 用户缓存
 	CacheRelation           = "relation:"                     // 关系缓存
@@ -27,7 +27,6 @@ const (
 	CacheSetUserFollow      = "set_user_follow:"              // Set存储, 用户关注列表: key: userId, val: toUserId...
 	CacheSetUserFollower    = "set_user_follower:"            // Set存储, 用户粉丝列表: key: userId, val: toUserId...
 	CacheStringVideoComment = "string_video_comment:"         // String存储, 视频评论数量: key: videoId, val: comments
-	CacheStringVideoFavor   = "string_video_favor:"           // String存储, 视频被点赞数量: key: videoId, val: favors
 
 	// ffmpeg的参数
 	OptionInputVideoPath = "-i"

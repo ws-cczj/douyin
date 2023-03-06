@@ -85,8 +85,8 @@ func (c *CommentDao) DeleteVideoComment(videoId, commentId int64) (err error) {
 		go func() {
 			defer wg.Done()
 			// 删除一条评论
-			dStr := `delete from video_comments where id = ?`
-			if _, err = tx.ExecContext(ctx, dStr, commentId); err != nil {
+			dStr := `update video_comments set is_delete = ? where id = ?`
+			if _, err = tx.ExecContext(ctx, dStr, 1, commentId); err != nil {
 				zap.L().Error("models comment delete comment fail!", zap.Error(err))
 			}
 		}()
@@ -156,7 +156,7 @@ func (*CommentDao) QueryVideoCommentListById(comments []*Comment, videoId int64)
 func (*CommentDao) IsExistComment(commentId int64) (bool, error) {
 	qStr := `select is_delete from video_comments where id = ?`
 	var isDelete int
-	if _, err := db.ExecContext(ctx, qStr, &isDelete, commentId); err != nil {
+	if err := db.GetContext(ctx, &isDelete, qStr, commentId); err != nil {
 		zap.L().Error("models comment ExecContext method exec fail!", zap.Error(err))
 		return false, err
 	}

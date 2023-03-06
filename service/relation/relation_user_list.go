@@ -22,8 +22,8 @@ func NewUserRelationListFlow(userId, tkUserId int64, action bool) *UserRelationL
 type UserRelationListFlow struct {
 	userId, tkUserId int64
 
-	followKey string
-	action    bool
+	followKey, followerKey string
+	action                 bool
 
 	data []*models.User
 }
@@ -36,27 +36,45 @@ func (f *UserRelationListFlow) Do() ([]*models.User, error) {
 		zap.L().Error("service relation_user_list prepareData method exec fail!", zap.Error(err))
 		return nil, e.FailServerBusy.Err()
 	}
-	if err := f.packData(); err != nil {
-		zap.L().Error("service relation_user_list packData method exec fail!", zap.Error(err))
-		return nil, e.FailServerBusy.Err()
+	// 如果不是游客访问就去查找关系
+	if f.tkUserId != 0 && len(f.data) > 0 {
+		if err := f.packData(); err != nil {
+			zap.L().Error("service relation_user_list packData method exec fail!", zap.Error(err))
+			return nil, e.FailServerBusy.Err()
+		}
 	}
 	return f.data, nil
 }
 
 func (u *UserRelationListFlow) checkNum() (err error) {
-	if u.userId == 0 || u.tkUserId == 0 {
+	if u.userId == 0 {
 		return e.FailNotKnow.Err()
 	}
-	// 预热缓存
+	var wg sync.WaitGroup
+	wg.Add(1)
 	relationCache := cache.NewRelationCache()
-	u.followKey = utils.AddCacheKey(consts.CacheRelation, consts.CacheSetUserFollow, utils.I64toa(u.tkUserId))
-	if err = relationCache.TTLIsExpiredCache(u.followKey); err != nil {
+	go func() {
+		defer wg.Done()
+		// 预热用户关注缓存 这里预热的是目标用户
+		u.followKey = utils.AddCacheKey(consts.CacheRelation, consts.CacheSetUserFollow, utils.I64toa(u.userId))
+		if err = relationCache.TTLIsExpiredCache(u.followKey); err != nil {
+			zap.L().Warn("service user_publish_video_list relationCache.TTLIsExpiredCache method exec fail!", zap.Error(err))
+			var ids []int64
+			if ids, err = models.NewRelationDao().QueryUserFollowIds(u.userId); err != nil {
+				zap.L().Error("service user_publish_video_list QueryUserFollowIds method exec fail!", zap.Error(err))
+			}
+			relationCache.SAddResetActionUserFollowOrFollower(u.followKey, ids)
+		}
+	}()
+	// 预热用户粉丝缓存
+	u.followerKey = utils.AddCacheKey(consts.CacheRelation, consts.CacheSetUserFollower, utils.I64toa(u.userId))
+	if err = relationCache.TTLIsExpiredCache(u.followerKey); err != nil {
 		zap.L().Warn("service user_publish_video_list relationCache.TTLIsExpiredCache method exec fail!", zap.Error(err))
 		var ids []int64
-		if ids, err = models.NewRelationDao().QueryUserFollowIds(u.tkUserId); err != nil {
-			zap.L().Error("service user_publish_video_list QueryUserFollowIds method exec fail!", zap.Error(err))
+		if ids, err = models.NewRelationDao().QueryUserFollowerIds(u.userId); err != nil {
+			zap.L().Error("service user_publish_video_list QueryUserFollowerIds method exec fail!", zap.Error(err))
 		}
-		relationCache.SAddResetActionUserFollowOrFollower(u.followKey, ids)
+		relationCache.SAddResetActionUserFollowOrFollower(u.followerKey, ids)
 	}
 	return nil
 }
@@ -71,38 +89,55 @@ func (u *UserRelationListFlow) prepareData() (err error) {
 				zap.L().Error("service relation_user_list QueryUserFollows method exec fail!", zap.Error(err))
 			}
 		}
-		u.data = make([]*models.User, follows)
-		// 获取关注列表
-		if err = models.NewRelationDao().QueryUserFollowList(u.data, u.userId); err != nil {
-			zap.L().Error("service relation_user_list QueryUserFollowList method exec fail!", zap.Error(err))
-			return
+		// 这里先查询关注数量的原因有两个，1：如果没有关注直接可以返回，2：提前申请容量，避免触发append扩容机制节省资源
+		if follows > 0 || err != nil {
+			u.data = make([]*models.User, follows)
+			// 获取关注列表
+			if err = models.NewRelationDao().QueryUserFollowList(u.data, u.userId); err != nil {
+				zap.L().Error("service relation_user_list QueryUserFollowList method exec fail!", zap.Error(err))
+				return
+			}
 		}
 	} else {
-		// TODO 这里没有对粉丝数进行redis存储，后续再进行
 		// 获取粉丝数
 		var followers int64
-		if followers, err = models.NewUserDao().QueryUserFollowers(u.userId); err != nil {
-			zap.L().Error("service relation_user_list QueryUserFollowers method exec fail!", zap.Error(err))
+		if followers, err = cache.NewRelationCache().SCardQueryUserFollowers(u.followerKey); followers < 0 {
+			zap.L().Warn("service relation_user_list SCardQueryUserFollowers method exec fail!", zap.Error(err))
+			// 如果缓存无效就去数据库查找
+			if followers, err = models.NewUserDao().QueryUserFollowers(u.userId); err != nil {
+				zap.L().Error("service relation_user_list QueryUserFollowers method exec fail!", zap.Error(err))
+			}
 		}
-		u.data = make([]*models.User, followers)
-		// 获取粉丝列表
-		if err = models.NewRelationDao().QueryUserFollowerList(u.data, u.userId); err != nil {
-			zap.L().Error("service relation_user_list QueryUserFollowerList method exec fail!", zap.Error(err))
-			return
+		// 如果错误不为空说明一定是数据库查找粉丝数错误，这里错误是可以容忍的，直接查询数据库数据即可!
+		if followers > 0 || err != nil {
+			u.data = make([]*models.User, followers)
+			// 获取粉丝列表
+			if err = models.NewRelationDao().QueryUserFollowerList(u.data, u.userId); err != nil {
+				zap.L().Error("service relation_user_list QueryUserFollowerList method exec fail!", zap.Error(err))
+				return
+			}
 		}
 	}
 	return
 }
 
 func (u *UserRelationListFlow) packData() (err error) {
+	tkUserKey := utils.AddCacheKey(consts.CacheRelation, consts.CacheSetUserFollow, utils.I64toa(u.tkUserId))
 	relationCache := cache.NewRelationCache()
 	relationDao := models.NewRelationDao()
 	var wg sync.WaitGroup
 	wg.Add(len(u.data))
-	for _, data := range u.data {
+	for i, data := range u.data {
+		if data == nil {
+			u.data = u.data[:i]
+			wg.Add(i - len(u.data))
+			zap.L().Warn("service relation_user_list user is null data!", zap.Any("data", u.data))
+			return
+		}
 		go func(user *models.User) {
 			defer wg.Done()
-			if user.IsFollow, err = relationCache.SIsMemberIsExistRelation(u.followKey, user.UserId); err != nil {
+			// 这里查找的关系是当前访问的用户
+			if user.IsFollow, err = relationCache.SIsMemberIsExistRelation(tkUserKey, user.UserId); err != nil {
 				zap.L().Error("service video_comment SIsMemberIsExistRelation method exec fail!", zap.Error(err))
 				// 如果缓存无效就去数据库查找
 				var isFollow int
@@ -115,5 +150,6 @@ func (u *UserRelationListFlow) packData() (err error) {
 			}
 		}(data)
 	}
+	wg.Wait()
 	return
 }

@@ -1,9 +1,11 @@
 package video
 
 import (
+	"douyin/cache"
 	"douyin/consts"
 	models "douyin/database/models"
 	"douyin/pkg/e"
+	"douyin/pkg/utils"
 	"sync"
 	"time"
 
@@ -12,7 +14,7 @@ import (
 
 type FeedResponse struct {
 	NextTime int64           `json:"next_time"`
-	Videos   []*models.Video `json:"video_list"`
+	Videos   []*models.Video `json:"video_list,omitempty"`
 }
 
 func UserFeed(lastTime, userId int64) (*FeedResponse, error) {
@@ -72,6 +74,8 @@ func (u *UserFeedFlow) prepareData() (err error) {
 		}
 	}
 	// 2. 根据每个视频id去查询用户信息
+	followKey := utils.AddCacheKey(consts.CacheRelation, consts.CacheSetUserFollow, utils.I64toa(u.userId))
+	favorKey := utils.AddCacheKey(consts.CacheFavor, consts.CacheSetUserFavor, utils.I64toa(u.userId))
 	var wg sync.WaitGroup
 	for i, video := range u.videos {
 		if video == nil {
@@ -88,20 +92,28 @@ func (u *UserFeedFlow) prepareData() (err error) {
 			}
 			// 判断用户关系
 			if u.userId != vdo.UserId {
-				var isFollow int
-				if isFollow, err = models.NewRelationDao().IsExistRelation(u.userId, vdo.UserId); err != nil {
-					zap.L().Error("service video_user_feed NewRelationDao method exec fail!", zap.Error(err))
-				}
-				if isFollow == 1 {
-					vdo.Author.IsFollow = true
+				if vdo.Author.IsFollow, err = cache.NewRelationCache().SIsMemberIsExistRelation(followKey, vdo.UserId); err != nil {
+					zap.L().Error("service video_user_feed SIsMemberIsExistRelation method exec fail!", zap.Error(err))
+					// 如果缓存无效就去数据库查找
+					var isFollow int
+					if isFollow, err = models.NewRelationDao().IsExistRelation(u.userId, vdo.UserId); err != nil {
+						zap.L().Error("service video_user_feed NewRelationDao method exec fail!", zap.Error(err))
+					}
+					if isFollow == 1 {
+						vdo.Author.IsFollow = true
+					}
 				}
 			}
-			var isFavor int
-			if isFavor, err = models.NewFavorDao().IsExistFavor(u.userId, vdo.VideoId); err != nil {
-				zap.L().Error("service video_user_feed IsExistFavor method exec fail!", zap.Error(err))
-			}
-			if isFavor == 1 {
-				vdo.IsFavor = true
+			if vdo.IsFavor, err = cache.NewFavorCache().SIsMemberIsExistFavor(favorKey, vdo.VideoId); err != nil {
+				zap.L().Error("service video_user_feed SIsMemberIsExistFavor method exec fail!", zap.Error(err))
+				// 如果缓存无效就去数据库中找
+				var isFavor int
+				if isFavor, err = models.NewFavorDao().IsExistFavor(u.userId, vdo.VideoId); err != nil {
+					zap.L().Error("service video_user_feed IsExistFavor method exec fail!", zap.Error(err))
+				}
+				if isFavor == 1 {
+					vdo.IsFavor = true
+				}
 			}
 		}(video)
 	}
