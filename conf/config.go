@@ -69,7 +69,9 @@ type Mongo struct {
 	MaxPoolSize uint64 `mapstructure:"max_pools"`
 	MinPoolSize uint64 `mapstructure:"min_pools"`
 	MaxConns    uint64 `mapstructure:"max_opens_conns"`
+	Db          string `mapstructure:"db"`
 	Addr        string `mapstructure:"addr"`
+	Colt        string `mapstructure:"colt"`
 }
 
 func init() {

@@ -2,11 +2,8 @@ package models
 
 import (
 	"database/sql"
-	"douyin/pkg/utils"
-	"errors"
+	"douyin/pkg/e"
 	"sync"
-
-	"github.com/jmoiron/sqlx"
 
 	"go.uber.org/zap"
 )
@@ -33,25 +30,13 @@ func NewFavorDao() *FavorDao {
 	return favorDao
 }
 
-// QueryUserFavorVideos 查询用户点赞的视频总数
-func (*FavorDao) QueryUserFavorVideos(userId int64) (favors int64, err error) {
-	qStr := `select Count(*) from user_favor_videos where user_id = ? AND is_favor = ?`
-	if err = db.GetContext(ctx, &favors, qStr, userId, 1); err != nil {
-		if err == sql.ErrNoRows {
-			zap.L().Warn("models favor QueryUserFavorVideos data is null", zap.Error(err))
-			err = nil
-		}
-	}
-	return
-}
-
 // AddUserFavorVideoInfoById 添加用户点赞视频操作
 func (*FavorDao) AddUserFavorVideoInfoById(userId, videoId int64, isFavor int) (err error) {
 	var tx *sql.Tx
 	if tx, err = db.Begin(); err == nil {
 		if tx == nil {
 			zap.L().Error("models favor begin tx transition fail!", zap.Error(err))
-			return errors.New("服务繁忙")
+			return e.FailServerBusy.Err()
 		}
 		var wg sync.WaitGroup
 		wg.Add(3)
@@ -96,7 +81,7 @@ func (*FavorDao) AddUserFavorVideoInfoById(userId, videoId int64, isFavor int) (
 				zap.L().Error("models favor UpdateFavorData To table fail!", zap.Error(err))
 			}
 		default:
-			err = errors.New("不规范操作")
+			err = e.FailNotKnow.Err()
 		}
 		wg.Wait()
 	}
@@ -119,7 +104,7 @@ func (*FavorDao) SubUserFavorsInfoById(userId, videoId int64, isFavor int) (err 
 	if tx, err = db.Begin(); err == nil {
 		if tx == nil {
 			zap.L().Error("models favor begin tx transition fail!", zap.Error(err))
-			return errors.New("服务繁忙")
+			return e.FailServerBusy.Err()
 		}
 		var wg sync.WaitGroup
 		wg.Add(3)
@@ -153,7 +138,7 @@ func (*FavorDao) SubUserFavorsInfoById(userId, videoId int64, isFavor int) (err 
 			}
 		}()
 		if isFavor != 1 {
-			err = errors.New("不规范操作")
+			err = e.FailNotKnow.Err()
 		}
 		uStr := `update user_favor_videos set is_favor = ? where user_id = ? AND video_id = ?`
 		if _, err = tx.ExecContext(ctx, uStr, 0, userId, videoId); err != nil {
@@ -171,21 +156,6 @@ func (*FavorDao) SubUserFavorsInfoById(userId, videoId int64, isFavor int) (err 
 		zap.L().Error("models favor tx Commit exec fail!", zap.Error(err))
 		// 防止占用资源，未提交成功一定要回滚
 		tx.Rollback()
-	}
-	return
-}
-
-// QueryUserVideosFavors 查询用户每个视频的获赞数
-func (*FavorDao) QueryUserVideosFavors(videoIds []int64) (favors []int64, err error) {
-	qStr := `select Count(*)
-        		from user_favor_videos
-        		where video_id in(?) AND is_favor = ?
-        		order by FIND_IN_SET(video_id, ?);`
-	favors = make([]int64, len(videoIds))
-	qry, args, _ := sqlx.In(qStr, videoIds, utils.ISlice64toa(videoIds))
-	query := db.Rebind(qry)
-	if err = db.SelectContext(ctx, &favors, query, args...); err != nil {
-		zap.L().Error("models favor QueryUserVideosFavors method exec fail!", zap.Error(err))
 	}
 	return
 }

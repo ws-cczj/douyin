@@ -3,6 +3,7 @@ package cache
 import (
 	"context"
 	"douyin/conf"
+	"douyin/pkg/e"
 	"fmt"
 
 	"github.com/go-redis/redis/v8"
@@ -14,7 +15,6 @@ var (
 	rdbRelation *redis.Client
 	rdbVideo    *redis.Client
 	rdbFavor    *redis.Client
-	rdbComment  *redis.Client
 )
 
 // InitRedis 初始化所有Redis连接。
@@ -22,7 +22,7 @@ func InitRedis() {
 	var err error
 	defer func() {
 		if err != nil {
-			panic(fmt.Errorf("initRedis fail!, err: %v", err))
+			panic(fmt.Sprintf("%s, err: %v", e.FailInitRedis.Msg(), err))
 		}
 	}()
 	rdbUser = redis.NewClient(&redis.Options{
@@ -53,20 +53,20 @@ func InitRedis() {
 		DB:       conf.Conf.RDB.FavorDB, // 视频评论缓存
 	})
 	err = rdbFavor.Ping(ctx).Err()
-	rdbComment = redis.NewClient(&redis.Options{
-		Addr:     conf.Conf.RDB.Addr,
-		Password: conf.Conf.RDB.Password,
-		PoolSize: conf.Conf.RDB.PoolSize,
-		DB:       conf.Conf.RDB.CommentDB, // 视频评论缓存
-	})
-	err = rdbComment.Ping(ctx).Err()
 }
 
 // Close 统一关闭redis连接
 func Close() {
-	_ = rdbUser.Close()
-	_ = rdbRelation.Close()
-	_ = rdbFavor.Close()
-	_ = rdbVideo.Close()
-	_ = rdbComment.Close()
+	if rdbUser != nil {
+		_ = rdbUser.Close()
+	}
+	if rdbRelation != nil {
+		_ = rdbRelation.Close()
+	}
+	if rdbVideo != nil {
+		_ = rdbVideo.Close()
+	}
+	if rdbFavor != nil {
+		_ = rdbFavor.Close()
+	}
 }

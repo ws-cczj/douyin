@@ -52,7 +52,8 @@ func (u *VisitorFeedFlow) checkNum() error {
 func (u *VisitorFeedFlow) prepareData() (err error) {
 	videoDao := models.NewVideoDao()
 	// 根据时间查询数据库中视频条数
-	if err = videoDao.QueryVideoListByTime(u.videos, u.lastTime); err != nil {
+	formatT := time.UnixMilli(u.lastTime).Format("2006-01-02 15:04:05")
+	if err = videoDao.QueryVideoListByTime(u.videos, formatT); err != nil {
 		zap.L().Error("service video_visitor_feed QueryVideoListByTime method exec fail!", zap.Error(err))
 		return
 	}
@@ -63,6 +64,7 @@ func (u *VisitorFeedFlow) prepareData() (err error) {
 		}
 	}
 	// 填充数据
+	userDao := models.NewUserDao()
 	var wg sync.WaitGroup
 	for i, video := range u.videos {
 		if video == nil {
@@ -73,7 +75,7 @@ func (u *VisitorFeedFlow) prepareData() (err error) {
 		go func(vdo *models.Video) {
 			defer wg.Done()
 			vdo.Author = new(models.User)
-			if err = models.NewUserDao().QueryUserInfoById(vdo.Author, vdo.UserId); err != nil {
+			if err = userDao.QueryUserInfoById(vdo.Author, vdo.UserId); err != nil {
 				zap.L().Error("service video_visitor_feed QueryUserInfoById method exec fail!", zap.Error(err))
 			}
 		}(video)
@@ -84,7 +86,7 @@ func (u *VisitorFeedFlow) prepareData() (err error) {
 
 func (u *VisitorFeedFlow) packData() error {
 	u.data = &FeedResponse{
-		NextTime: u.videos[len(u.videos)-1].CreateAt.Unix(),
+		NextTime: u.videos[0].CreateAt.UnixMilli(),
 		Videos:   u.videos,
 	}
 	return nil

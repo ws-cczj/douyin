@@ -2,6 +2,7 @@ package utils
 
 import (
 	"douyin/conf"
+	"douyin/pkg/e"
 	"fmt"
 	"time"
 
@@ -17,10 +18,11 @@ func InitSnowFlake() {
 	var err error
 	node, err = sf.NewNode(conf.Conf.Machines)
 	if err != nil {
-		panic(fmt.Errorf("snowflake init fail, err: %s", err))
+		panic(fmt.Sprintf("%s, err: %v", e.FailInitSnowFlake.Msg(), err))
 	}
 }
 
+// GenID 生成int64的分布式id
 func GenID() int64 {
 	return node.Generate().Int64()
 }

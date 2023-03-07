@@ -5,10 +5,9 @@ import (
 	"douyin/pkg/e"
 	"douyin/pkg/utils"
 	"douyin/service/video"
+	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"net/http"
-
-	"github.com/gin-gonic/gin"
 )
 
 type FeedResponse struct {
@@ -18,7 +17,7 @@ type FeedResponse struct {
 
 func FeedHandler(c *gin.Context) {
 	lastTimeStr := c.Query("latest_time")
-	lastTime := utils.AtoI64(lastTimeStr) / 1000
+	lastTime := utils.AtoI64(lastTimeStr)
 	var feedResponse *video.FeedResponse
 	var err error
 	if userIdStr, exist := c.Get("user_id"); exist {

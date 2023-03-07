@@ -56,6 +56,8 @@ func (v *VideoCommentFlow) checkNum() (err error) {
 		if v.content == "" || len(v.content) > consts.MaxCommentLenLimit {
 			return e.FailCommentLenLimit.Err()
 		}
+		// 过滤关键词
+		v.content = utils.Replace(v.content)
 	}
 	// 判断视频是否存在
 	var exist bool

@@ -23,6 +23,12 @@ const (
 	FailTokenExpired
 	FailTokenVerify
 	FailTokenInvalid
+	FailInitFilter
+	FailInitLogger
+	FailInitMongodb
+	FailInitMysql
+	FailInitRedis
+	FailInitSnowFlake
 	FailServerBusy
 	FailCacheExpired
 	FailNotKnow
@@ -48,6 +54,12 @@ var failMsg = map[Code]string{
 	FailTokenExpired:       "user token time expired!",
 	FailTokenVerify:        "user token verify fail!",
 	FailTokenInvalid:       "token invalid!",
+	FailInitFilter:         "init filter fail!",
+	FailInitLogger:         "init logger fail!",
+	FailInitMongodb:        "init mongoDb fail!",
+	FailInitMysql:          "init mysql fail!",
+	FailInitRedis:          "init redis fail!",
+	FailInitSnowFlake:      "init snowFlake fail!",
 	FailServerBusy:         "server busy!",
 	FailCacheExpired:       "cache expired! (ttl < 0)",
 	FailNotKnow:            "not know error!",

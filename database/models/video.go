@@ -3,7 +3,7 @@ package models
 import (
 	"database/sql"
 	"douyin/consts"
-	"errors"
+	"douyin/pkg/e"
 	"sync"
 	"time"
 
@@ -45,7 +45,7 @@ func (*VideoDao) PublishVideo(videoId, userId int64, playUrl, coverUrl, title st
 	if tx, err = db.Begin(); err == nil {
 		if tx == nil {
 			zap.L().Error("models relation begin tx transition fail!", zap.Error(err))
-			return errors.New("服务繁忙")
+			return e.FailServerBusy.Err()
 		}
 		var wg sync.WaitGroup
 		wg.Add(1)
@@ -113,11 +113,13 @@ func (*VideoDao) QueryVideoListWithFavors(videos []*Video, userId int64) (err er
 }
 
 // QueryVideoListByTime 根据时间来查询视频列表
-func (*VideoDao) QueryVideoListByTime(videos []*Video, lastTime int64) (err error) {
+func (*VideoDao) QueryVideoListByTime(videos []*Video, lastTime string) (err error) {
 	qStr := `select video_id,user_id,play_url,cover_url,favored_count,comment_count,title,create_at
-				from videos 
-				where create_at >= ? AND is_delete = ?
-				order by create_at ASC
+				from videos
+				where create_at > ? 
+  					AND create_at <= Now()
+  					AND is_delete = ?
+				order by create_at DESC
 				limit ?`
 	if err = db.SelectContext(ctx, &videos, qStr, lastTime, 0, consts.MaxFeedVideos); err != nil {
 		zap.L().Error("models video SelectContext method exec fail!", zap.Error(err))

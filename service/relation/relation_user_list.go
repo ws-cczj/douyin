@@ -76,6 +76,7 @@ func (u *UserRelationListFlow) checkNum() (err error) {
 		}
 		relationCache.SAddResetActionUserFollowOrFollower(u.followerKey, ids)
 	}
+	wg.Wait()
 	return nil
 }
 
@@ -95,7 +96,6 @@ func (u *UserRelationListFlow) prepareData() (err error) {
 			// 获取关注列表
 			if err = models.NewRelationDao().QueryUserFollowList(u.data, u.userId); err != nil {
 				zap.L().Error("service relation_user_list QueryUserFollowList method exec fail!", zap.Error(err))
-				return
 			}
 		}
 	} else {
@@ -114,7 +114,6 @@ func (u *UserRelationListFlow) prepareData() (err error) {
 			// 获取粉丝列表
 			if err = models.NewRelationDao().QueryUserFollowerList(u.data, u.userId); err != nil {
 				zap.L().Error("service relation_user_list QueryUserFollowerList method exec fail!", zap.Error(err))
-				return
 			}
 		}
 	}

@@ -37,15 +37,18 @@ func InitDevs() {
 	logger.InitLogger()
 	// 初始化雪花生成器
 	utils.InitSnowFlake()
-	// 初始化数据库
+	// 初始化敏感词过滤器
+	utils.InitFilter()
+	// 初始化mysql数据库
 	models.InitMysql()
 	// 初始化redis缓存
 	cache.InitRedis()
-	// 初始化mongo缓存
+	// 初始化mongodb数据库
 	mongodb.InitMongodb()
-	//cache.InitRedis()
-	// TODO 初始化敏感词拦截器。
-
+	// 这里必须在New之前设置环境，否则不会生效!
+	if conf.Conf.Mode == gin.ReleaseMode {
+		gin.SetMode(conf.Conf.Mode)
+	}
 }
 
 // goAndShutdown 启动程序和优雅关机
@@ -69,6 +72,7 @@ func goAndShutdown(r *gin.Engine) {
 	if err := srv.Shutdown(ctx); err != nil {
 		zap.L().Error("Server Shutdown fail!", zap.Error(err))
 	}
+	// 资源释放
 	models.Close()
 	mongodb.Close()
 	cache.Close()

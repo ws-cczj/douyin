@@ -2,7 +2,7 @@ package models
 
 import (
 	"database/sql"
-	"errors"
+	"douyin/pkg/e"
 	"sync"
 	"time"
 
@@ -39,7 +39,7 @@ func (c *CommentDao) PublishVideoComment(userId, videoId int64, content string) 
 	if tx, err = db.Begin(); err == nil {
 		if tx == nil {
 			zap.L().Error("models comment begin tx transition fail!", zap.Error(err))
-			return 0, errors.New("服务繁忙")
+			return 0, e.FailServerBusy.Err()
 		}
 		var wg sync.WaitGroup
 		wg.Add(1)
@@ -78,7 +78,7 @@ func (c *CommentDao) DeleteVideoComment(videoId, commentId int64) (err error) {
 	if tx, err = db.Begin(); err == nil {
 		if tx == nil {
 			zap.L().Error("models comment begin tx transition fail!", zap.Error(err))
-			return errors.New("服务繁忙")
+			return e.FailServerBusy.Err()
 		}
 		var wg sync.WaitGroup
 		wg.Add(1)
@@ -112,6 +112,9 @@ func (c *CommentDao) DeleteVideoComment(videoId, commentId int64) (err error) {
 
 // QueryUserCommentById 查询用户评论通过Id
 func (*CommentDao) QueryUserCommentById(comment *Comment, commentId int64) (err error) {
+	if comment == nil {
+		return e.FailNotKnow.Err()
+	}
 	qStr := `select u.user_id,username,follow_count,follower_count,avatar,background_image,
 				signature,total_favor_count,work_count,favor_count,t.id,t.content,t.create_at
 				from users u, (select id,user_id,content,create_at
@@ -124,9 +127,9 @@ func (*CommentDao) QueryUserCommentById(comment *Comment, commentId int64) (err 
 	return
 }
 
-// QueryVideoCommentsById 根据id来查询该视频下所有的评论列表ids
+// QueryVideoCommentsById 根据id来查询该视频下所有的评论数量
 func (*CommentDao) QueryVideoCommentsById(videoId int64) (ids int64, err error) {
-	qStr := `select COUNT(*) from video_comments where video_id = ? AND is_delete = ?`
+	qStr := `select COUNT(id) from video_comments where video_id = ? AND is_delete = ?`
 	if err = db.GetContext(ctx, &ids, qStr, videoId, 0); err != nil {
 		if err == sql.ErrNoRows {
 			zap.L().Warn("models comment Get comments data is null!")

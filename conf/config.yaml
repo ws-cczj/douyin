@@ -1,8 +1,7 @@
 server:
   mode: "debug"
   ip: "192.168.43.219"
-  #  mode: "release"
-  #  ip: "192.168.70.105"
+  #mode: "release"
   port: 8080
 snowflake:
   start_at: "2023-02-01"
@@ -23,8 +22,8 @@ mysql:
   dbname: "douyin"
   username: "root"
   password: "541688"
-  max_idles_conns: 50
-  max_opens_conns: 200
+  max_idles_conns: 100
+  max_opens_conns: 300
 redis:
   addr: "cczj:6379"
   password: ""
@@ -35,7 +34,9 @@ redis:
   comment_db: 5
   pool_size: 100
 mongo:
+  db: "douyin"
+  colt: "message"
   addr: "cczj:27017"
-  max_pools: 50
-  min_pools: 20
+  max_pools: 200
+  min_pools: 50
   max_opens_conns: 200

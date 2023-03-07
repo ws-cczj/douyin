@@ -3,6 +3,7 @@ package models
 import (
 	"context"
 	"douyin/conf"
+	"douyin/pkg/e"
 	"fmt"
 
 	"go.uber.org/zap"
@@ -24,7 +25,7 @@ func InitMysql() {
 	var err error
 	if db, err = sqlx.Connect("mysql", dsn); err != nil {
 		zap.L().Debug("mysql dsn", zap.String("dsn", dsn))
-		panic(fmt.Errorf("mysql connect fail, err: %s", err))
+		panic(fmt.Sprintf("%s, err: %v", e.FailInitMysql.Msg(), err))
 	}
 	// 配置连接池,最大空闲连接数,最大同时连接数
 	db.SetMaxIdleConns(conf.Conf.MDB.MaxIdles)
@@ -32,5 +33,7 @@ func InitMysql() {
 }
 
 func Close() {
-	_ = db.Close()
+	if db != nil {
+		_ = db.Close()
+	}
 }

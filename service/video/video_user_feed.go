@@ -13,7 +13,7 @@ import (
 )
 
 type FeedResponse struct {
-	NextTime int64           `json:"next_time"`
+	NextTime int64           `json:"next_time,omitempty"`
 	Videos   []*models.Video `json:"video_list,omitempty"`
 }
 
@@ -54,7 +54,7 @@ func (u *UserFeedFlow) checkNum() error {
 	if u.userId == 0 {
 		return e.FailNotKnow.Err()
 	}
-	if u.lastTime > time.Now().Unix() {
+	if u.lastTime > time.Now().UnixMilli() {
 		zap.L().Debug("service video_user_feed uLastAt", zap.Int64("time", u.lastTime))
 		return e.FailNotKnow.Err()
 	}
@@ -63,17 +63,24 @@ func (u *UserFeedFlow) checkNum() error {
 
 func (u *UserFeedFlow) prepareData() (err error) {
 	// 1. 根据时间查询数据库中视频条数
-	if err = models.NewVideoDao().QueryVideoListByTime(u.videos, u.lastTime); err != nil {
+	videoDao := models.NewVideoDao()
+	formatT := time.UnixMilli(u.lastTime).Format("2006-01-02 15:04:05")
+	if err = videoDao.QueryVideoListByTime(u.videos, formatT); err != nil {
 		zap.L().Error("service video_user_feed QueryVideoListByTime method exec fail!", zap.Error(err))
 		return
 	}
 	if u.videos[0] == nil {
-		if err = models.NewVideoDao().QueryVideoList(u.videos); err != nil {
+		if err = videoDao.QueryVideoList(u.videos); err != nil {
 			zap.L().Error("service video_user_feed QueryVideoList method exec fail!", zap.Error(err))
 			return
 		}
 	}
 	// 2. 根据每个视频id去查询用户信息
+	userDao := models.NewUserDao()
+	relationDao := models.NewRelationDao()
+	favorDao := models.NewFavorDao()
+	favorCache := cache.NewFavorCache()
+	relationCache := cache.NewRelationCache()
 	followKey := utils.AddCacheKey(consts.CacheRelation, consts.CacheSetUserFollow, utils.I64toa(u.userId))
 	favorKey := utils.AddCacheKey(consts.CacheFavor, consts.CacheSetUserFavor, utils.I64toa(u.userId))
 	var wg sync.WaitGroup
@@ -87,16 +94,16 @@ func (u *UserFeedFlow) prepareData() (err error) {
 			defer wg.Done()
 			// 通过id查询用户信息
 			vdo.Author = new(models.User)
-			if err = models.NewUserDao().QueryUserInfoById(vdo.Author, vdo.UserId); err != nil {
+			if err = userDao.QueryUserInfoById(vdo.Author, vdo.UserId); err != nil {
 				zap.L().Error("service video_user_feed QueryUserInfoById method exec fail!", zap.Error(err))
 			}
 			// 判断用户关系
 			if u.userId != vdo.UserId {
-				if vdo.Author.IsFollow, err = cache.NewRelationCache().SIsMemberIsExistRelation(followKey, vdo.UserId); err != nil {
+				if vdo.Author.IsFollow, err = relationCache.SIsMemberIsExistRelation(followKey, vdo.UserId); err != nil {
 					zap.L().Error("service video_user_feed SIsMemberIsExistRelation method exec fail!", zap.Error(err))
 					// 如果缓存无效就去数据库查找
 					var isFollow int
-					if isFollow, err = models.NewRelationDao().IsExistRelation(u.userId, vdo.UserId); err != nil {
+					if isFollow, err = relationDao.IsExistRelation(u.userId, vdo.UserId); err != nil {
 						zap.L().Error("service video_user_feed NewRelationDao method exec fail!", zap.Error(err))
 					}
 					if isFollow == 1 {
@@ -104,11 +111,11 @@ func (u *UserFeedFlow) prepareData() (err error) {
 					}
 				}
 			}
-			if vdo.IsFavor, err = cache.NewFavorCache().SIsMemberIsExistFavor(favorKey, vdo.VideoId); err != nil {
+			if vdo.IsFavor, err = favorCache.SIsMemberIsExistFavor(favorKey, vdo.VideoId); err != nil {
 				zap.L().Error("service video_user_feed SIsMemberIsExistFavor method exec fail!", zap.Error(err))
 				// 如果缓存无效就去数据库中找
 				var isFavor int
-				if isFavor, err = models.NewFavorDao().IsExistFavor(u.userId, vdo.VideoId); err != nil {
+				if isFavor, err = favorDao.IsExistFavor(u.userId, vdo.VideoId); err != nil {
 					zap.L().Error("service video_user_feed IsExistFavor method exec fail!", zap.Error(err))
 				}
 				if isFavor == 1 {
@@ -123,7 +130,7 @@ func (u *UserFeedFlow) prepareData() (err error) {
 
 func (u *UserFeedFlow) packData() error {
 	u.data = &FeedResponse{
-		NextTime: u.videos[len(u.videos)-1].CreateAt.Unix(),
+		NextTime: u.videos[0].CreateAt.UnixMilli(),
 		Videos:   u.videos,
 	}
 	return nil

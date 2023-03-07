@@ -2,7 +2,7 @@ package models
 
 import (
 	"database/sql"
-	"errors"
+	"douyin/pkg/e"
 	"sync"
 
 	"go.uber.org/zap"
@@ -96,8 +96,8 @@ func (*RelationDao) QueryUserFriendsList(user []*User, userId int64) (err error)
        follow_count,follower_count,work_count,favor_count,total_favor_count
        from users where user_id in (select to_user_id 
                                     from user_relations
-                                    where user_id = ? AND is_friend = 1)`
-	if err = db.SelectContext(ctx, &user, qStr, userId); err != nil {
+                                    where user_id = ? AND is_friend = ?)`
+	if err = db.SelectContext(ctx, &user, qStr, userId, 1); err != nil {
 		zap.L().Error("models relation friend data query fail!", zap.Error(err))
 	}
 	return
@@ -109,7 +109,7 @@ func (*RelationDao) Action1UserRelation(userId, toUserId int64, isFollow, isFoll
 	if tx, err = db.Begin(); err == nil {
 		if tx == nil {
 			zap.L().Error("models relation begin tx transition fail!", zap.Error(err))
-			return errors.New("服务繁忙")
+			return e.FailServerBusy.Err()
 		}
 		// 添加用户关系
 		var wg sync.WaitGroup
@@ -177,7 +177,7 @@ func (*RelationDao) Action2UserRelation(userId, toUserId int64, isFollow, isFoll
 	if tx, err = db.Begin(); err == nil {
 		if tx == nil {
 			zap.L().Error("models relation begin tx transition fail!", zap.Error(err))
-			return errors.New("服务繁忙")
+			return e.FailServerBusy.Err()
 		}
 		// 添加用户关系
 		var wg sync.WaitGroup
@@ -238,8 +238,8 @@ func (*RelationDao) IsExistFriend(userId, toUserId int64) (bool, error) {
 
 // QueryUserFriendsById 根据id查询朋友数目
 func (*RelationDao) QueryUserFriendsById(userId int64) (friends int64, err error) {
-	qStr := `select Count(*) from user_relations where user_id = ? AND is_friend = 1`
-	if err = db.GetContext(ctx, &friends, qStr, userId); err != nil {
+	qStr := `select Count(id) from user_relations where user_id = ? AND is_friend = ?`
+	if err = db.GetContext(ctx, &friends, qStr, userId, 1); err != nil {
 		zap.L().Error("models relation query userFriends fail!", zap.Error(err))
 	}
 	return
