@@ -6,7 +6,6 @@
 ![GitHub watchers](https://img.shields.io/github/watchers/ws-cczj/douyin?style=plastic)
 ![GitHub forks](https://img.shields.io/github/forks/ws-cczj/douyin?style=plastic)
 ![GitHub contributors](https://img.shields.io/github/contributors/ws-cczj/douyin)
-[![MIT License][license-shield]][license-url]
 
 
 <!-- PROJECT LOGO -->
@@ -70,11 +69,14 @@ douyin
 
 ### 测试
 使用`go_test`对部分代码进行测试输出
+
 使用`pprof`配合go内置工具生成火焰图
+
 `go tool pprof -http=:4399 http://192.168.43.219:8080/debug/pprof/profile`
 ![flameGraph](http://cdn.cczjblog.top/cczjBlog-img/douyin_flamegraph.png-cczjImage)
 #### 使用`go-wrk` 工具进行测试
 `go-wrk -t=8 -c=100 -n=20000 http://xxx.xxx.xxx.xxx:8080/douyin/xxxx/`
+
 经过测试，所有的请求在`2W`次请求测试中均达到无错误并且总响应速度在`1.5s`左右
 
 
@@ -94,5 +96,5 @@ douyin
 - [go-redis](https://juejin.cn/post/7027347979065360392)
 - [JWT](https://jwt.io/introduction)
 
-### 小结
+### TODO
 如果有机会会去尝试一下将该项目改为微服务模式
