@@ -24,6 +24,7 @@
 #### 如何配置
 在conf包下的yaml文件中将地址进行修改配置即可
 
+#### 如何拉取该项目
 ```sh
 git clone https://github.com/ws-cczj/douyin.git
 ```
@@ -48,10 +49,10 @@ douyin
 │  └─video
 ├─middleware 中间件
 ├─pkg 全局库
-│  ├─document
-│  ├─e
-│  ├─logger
-│  └─utils
+│  ├─document 敏感词库
+│  ├─e 统一错误库
+│  ├─logger 日志库
+│  └─utils 工具
 ├─public 公共文件
 │  └─pic
 ├─router 路由
@@ -65,7 +66,11 @@ douyin
 ```
 
 ### 数据库表设计
-- TODO
+![database](http://cdn.cczjblog.top/cczjBlog-img/douyin_database.png-cczjImage)
+
+- 避免使用外键关联.外键关联会导致删除时出现连锁问题,并且会导致插入效率变慢,处理比较麻烦.
+- 避免硬删除.硬删除会造成主键在B+树中不连续,造成查询效率慢.碎片化等问题.
+- 因为是软删除,所以多处使用复合索引加快查询效率.
 
 ### 测试
 使用`go_test`对部分代码进行测试输出
