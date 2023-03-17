@@ -59,7 +59,7 @@ func (u *UserFollowFlow) checkNum() (err error) {
 
 func (u *UserFollowFlow) prepareData() (err error) {
 	// 缓存查询目标用户与当前用户之间的关系
-	u.follow2Key = utils.AddCacheKey(consts.CacheRelation, consts.CacheSetUserFollower, utils.I64toa(u.toUserId))
+	u.follow2Key = utils.StrI64(consts.CacheSetUserFollower, u.toUserId)
 	relationCache := cache.NewRelationCache()
 	if err = relationCache.TTLIsExpiredCache(u.follow2Key); err == nil {
 		var isFollow bool
@@ -93,7 +93,7 @@ func (u *UserFollowFlow) updateData() (err error) {
 
 	// 保证缓存一致性，先删除再重置缓存 这里重置的是当前用户的关注缓存
 	go func() {
-		key := utils.AddCacheKey(consts.CacheRelation, consts.CacheSetUserFollow, utils.I64toa(u.userId))
+		key := utils.StrI64(consts.CacheSetUserFollow, u.userId)
 		relationCache.DelCache(key)
 		var ids []int64
 		if ids, err = relationDao.QueryUserFollowIds(u.userId); err != nil {

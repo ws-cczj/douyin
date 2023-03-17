@@ -59,7 +59,6 @@ type Redis struct {
 	RelationDB int    `mapstructure:"relation_db"`
 	VideoDB    int    `mapstructure:"video_db"`
 	FavorDB    int    `mapstructure:"favor_db"`
-	CommentDB  int    `mapstructure:"comment_db"`
 	PoolSize   int    `mapstructure:"pool_size"`
 	Addr       string `mapstructure:"addr"`
 	Password   string `mapstructure:"password"`

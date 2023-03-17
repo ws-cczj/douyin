@@ -23,7 +23,7 @@ func RegisterHandler(c *gin.Context) {
 	// 调用流式注册
 	registerResponse, err := user.Register(uname, pwd)
 	if err != nil {
-		zap.L().Error("register method fail!", zap.Error(err))
+		zap.L().Error("handlers user_register register method fail!", zap.Error(err))
 		common.FailWithMsg(c, err.Error())
 		return
 	}

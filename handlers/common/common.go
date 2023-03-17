@@ -23,12 +23,12 @@ func FailWithMsg(c *gin.Context, msg string) {
 }
 
 // FailInner 数据库等内部程序错误避免返回给用户，进行统一错误处理
-func FailInner(c *gin.Context) {
-	c.JSON(http.StatusOK, Response{
-		StatusCode: e.FailServerBusy,
-		StatusMsg:  e.FailServerBusy.Msg(),
-	})
-}
+//func FailInner(c *gin.Context) {
+//	c.JSON(http.StatusOK, Response{
+//		StatusCode: e.FailServerBusy,
+//		StatusMsg:  e.FailServerBusy.Msg(),
+//	})
+//}
 
 // SuccessWithMsg 带有消息的请求成功响应
 func SuccessWithMsg(c *gin.Context, msg string) {

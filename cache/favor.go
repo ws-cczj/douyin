@@ -3,7 +3,6 @@ package cache
 import (
 	"douyin/consts"
 	"douyin/pkg/e"
-	"douyin/pkg/utils"
 	"sync"
 
 	"go.uber.org/zap"
@@ -60,7 +59,7 @@ func (*FavorCache) SIsMemberIsExistFavor(key string, videoId int64) (bool, error
 	if key == "" {
 		return false, e.FailNotKnow.Err()
 	}
-	return rdbFavor.SIsMember(ctx, key, utils.I64toa(videoId)).Result()
+	return rdbFavor.SIsMember(ctx, key, videoId).Result()
 }
 
 // DelCache 删除缓存
@@ -101,7 +100,7 @@ func (*FavorCache) TTLIsExpiredCache(key string) error {
 		return e.FailNotKnow.Err()
 	}
 	if t := rdbFavor.TTL(ctx, key).Val(); t < 1 {
-		zap.L().Error("cache favor ttl < 0", zap.String("key", key))
+		zap.L().Warn("cache favor ttl < 0", zap.String("key", key))
 		return e.FailCacheExpired.Err()
 	}
 	// 如果缓存没有过期就去续约

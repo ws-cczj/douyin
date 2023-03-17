@@ -40,7 +40,7 @@ func (s *SendMessageFlow) checkNum() (err error) {
 	if s.content == "" {
 		return e.FailMessageCantNULL.Err()
 	}
-	if len(s.content) > consts.MaxMessageLenLimit {
+	if len(s.content) > consts.CheckMaxMessageLen {
 		return e.FailMessageLenLimit.Err()
 	}
 	if s.action != "1" {

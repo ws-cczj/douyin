@@ -3,7 +3,6 @@ package cache
 import (
 	"douyin/consts"
 	"douyin/pkg/e"
-	"douyin/pkg/utils"
 	"sync"
 
 	"go.uber.org/zap"
@@ -47,6 +46,9 @@ func (r *RelationCache) SAddResetActionUserFollowOrFollower(key string, toUserId
 
 // SCardQueryUserFollows 查询用户关注数
 func (*RelationCache) SCardQueryUserFollows(key string) (follows int64, err error) {
+	if key == "" {
+		return -1, e.FailNotKnow.Err()
+	}
 	if follows, err = rdbRelation.SCard(ctx, key).Result(); follows > 0 {
 		return follows - 1, nil
 	}
@@ -58,6 +60,10 @@ func (*RelationCache) SCardQueryUserFollows(key string) (follows int64, err erro
 
 // SCardQueryUserFollowers 查询用户粉丝数
 func (*RelationCache) SCardQueryUserFollowers(key string) (followers int64, err error) {
+	if key == "" {
+		return -1, e.FailNotKnow.Err()
+	}
+	// 这里因为提前准备了 -1的数据，因此可以通过数据来进行判断是否缓存过期。
 	if followers, err = rdbRelation.SCard(ctx, key).Result(); followers > 0 {
 		return followers - 1, nil
 	}
@@ -72,7 +78,7 @@ func (*RelationCache) SIsMemberIsExistRelation(key string, toUserId int64) (bool
 	if key == "" {
 		return false, e.FailNotKnow.Err()
 	}
-	return rdbRelation.SIsMember(ctx, key, utils.I64toa(toUserId)).Result()
+	return rdbRelation.SIsMember(ctx, key, toUserId).Result()
 }
 
 // TTLIsExpiredCache 判断缓存是否过期

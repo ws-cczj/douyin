@@ -41,7 +41,7 @@ func (u *UserCancelFollowFlow) checkNum() (err error) {
 		return e.FailServerBusy.Err()
 	}
 	// 查找缓存
-	u.followKey = utils.AddCacheKey(consts.CacheRelation, consts.CacheSetUserFollow, utils.I64toa(u.userId))
+	u.followKey = utils.StrI64(consts.CacheSetUserFollow, u.userId)
 	relationCache := cache.NewRelationCache()
 	if err = relationCache.TTLIsExpiredCache(u.followKey); err == nil {
 		var isFollow bool
@@ -89,7 +89,7 @@ func (u *UserCancelFollowFlow) updateData() (err error) {
 	}()
 	// 更新目标用户的粉丝缓存
 	go func() {
-		key := utils.AddCacheKey(consts.CacheRelation, consts.CacheSetUserFollower, utils.I64toa(u.toUserId))
+		key := utils.StrI64(consts.CacheSetUserFollower, u.toUserId)
 		relationCache.DelCache(key)
 		var ids []int64
 		if ids, err = relationDao.QueryUserFollowerIds(u.toUserId); err != nil {

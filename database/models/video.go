@@ -121,7 +121,7 @@ func (*VideoDao) QueryVideoListByTime(videos []*Video, lastTime string) (err err
   					AND is_delete = ?
 				order by create_at DESC
 				limit ?`
-	if err = db.SelectContext(ctx, &videos, qStr, lastTime, 0, consts.MaxFeedVideos); err != nil {
+	if err = db.SelectContext(ctx, &videos, qStr, lastTime, 0, consts.CheckMaxFeedVideos); err != nil {
 		zap.L().Error("models video SelectContext method exec fail!", zap.Error(err))
 	}
 	return
@@ -134,7 +134,7 @@ func (*VideoDao) QueryVideoList(videos []*Video) (err error) {
 				where is_delete = ?
 				order by favored_count DESC
 				limit ?`
-	if err = db.SelectContext(ctx, &videos, qStr, 0, consts.MaxFeedVideos); err != nil {
+	if err = db.SelectContext(ctx, &videos, qStr, 0, consts.CheckMaxFeedVideos); err != nil {
 		zap.L().Error("models video QueryVideoList method exec fail!", zap.Error(err))
 	}
 	return

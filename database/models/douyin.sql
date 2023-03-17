@@ -33,8 +33,6 @@ CREATE TABLE `user_favor_videos`
     `is_favor` tinyint(4) NOT NULL DEFAULT 1 COMMENT '0表示没有点赞, 1表示已经点赞',
     PRIMARY KEY `pk_favor_id` (`id`),
     UNIQUE KEY `uk_favor_user_id` (`user_id`, `video_id`),
-    KEY        `idx_favor_user_id` (`user_id`, `is_favor`),
-    KEY        `idx_favor_video_id` (`video_id`, `is_favor`)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
   COLLATE utf8mb4_general_ci COMMENT '点赞表';
@@ -51,8 +49,7 @@ CREATE TABLE `user_relations`
     `update_at`  datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     PRIMARY KEY `pk_relations_id` (`id`),
     UNIQUE KEY `uk_relations_user_id` (`user_id`, `to_user_id`),
-    KEY          `idx_relations_to_user_id` (`to_user_id`, `user_id`, `is_follow`),
-    KEY          `idx_relations_user_follow_id` (`user_id`, `is_follow`)
+    KEY          `idx_relations_to_user_id` (`to_user_id`, `user_id`),
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4 COMMENT '关系表';
 
@@ -71,9 +68,9 @@ CREATE TABLE `videos`
     `create_at`     datetime     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '发表时间',
     `update_at`     datetime     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     PRIMARY KEY `pk_videos_id` (`id`),
-    KEY             `idx_videos_create_at` (`create_at`, `is_delete`),
-    KEY             `idx_videos_video_delete_id` (`video_id`, `is_delete`),
-    KEY             `idx_videos_user_delete_id` (`user_id`, `is_delete`)
+    UNIQUE KEY `idx_videos_video_id` (`video_id`),
+    UNIQUE KEY `idx_videos_user_id` (`user_id`),
+    KEY             `idx_videos_create_at` (`create_at`)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
   COLLATE utf8mb4_general_ci COMMENT '视频表';
@@ -89,7 +86,7 @@ CREATE TABLE `video_comments`
     `create_at` datetime     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `update_at` datetime     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     PRIMARY KEY `pk_comments_id` (`id`),
-    KEY         `idx_comments_video_id` (`video_id`, `is_delete`)
+    KEY         `idx_comments_video_id` (`video_id`)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4
   COLLATE utf8mb4_general_ci COMMENT '评论表';

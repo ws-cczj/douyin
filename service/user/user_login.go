@@ -51,10 +51,10 @@ func (l *LoginFlow) checkNum() (err error) {
 	if l.username == "" || l.password == "" {
 		return e.FailServerBusy.Err()
 	}
-	if len(l.username) > consts.MaxUsernameLimit {
+	if len(l.username) > consts.CheckMaxUsername {
 		return e.FailUsernameLimit.Err()
 	}
-	if len(l.password) > consts.MaxUserPasswordLimit {
+	if len(l.password) > consts.CheckMaxUserPassword {
 		return e.FailPasswordLimit.Err()
 	}
 	var wg sync.WaitGroup

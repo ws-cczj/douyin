@@ -25,6 +25,12 @@
 #### 如何配置
 在conf包下的yaml文件中将地址进行修改配置即可
 
+#### 如何运行
+编译文件: `go build main.go`
+
+直接运行: `go run main.go`
+
+通过make一步完成: `make`
 #### 如何拉取该项目
 ```sh
 git clone https://github.com/ws-cczj/douyin.git

@@ -60,7 +60,7 @@ func (p *PublishVideoListFlow) prepareData() (err error) {
 		// 查询用户关注缓存是否过期, 如果过期则对缓存进行重置操作
 		go func() {
 			defer wg.Done()
-			p.followKey = utils.AddCacheKey(consts.CacheRelation, consts.CacheSetUserFollow, utils.I64toa(p.tkUserId))
+			p.followKey = utils.StrI64(consts.CacheSetUserFollow, p.tkUserId)
 			relationCache := cache.NewRelationCache()
 			if err = relationCache.TTLIsExpiredCache(p.followKey); err != nil {
 				zap.L().Warn("service user_publish_video_list relationCache.TTLIsExpiredCache method exec fail!", zap.Error(err))
@@ -75,7 +75,7 @@ func (p *PublishVideoListFlow) prepareData() (err error) {
 		go func() {
 			defer wg.Done()
 			favorCache := cache.NewFavorCache()
-			p.favorKey = utils.AddCacheKey(consts.CacheFavor, consts.CacheSetUserFavor, utils.I64toa(p.tkUserId))
+			p.favorKey = utils.StrI64(consts.CacheSetUserFavor, p.tkUserId)
 			if err = favorCache.TTLIsExpiredCache(p.favorKey); err != nil {
 				zap.L().Warn("service user_publish_video_list favorCache.TTLIsExpiredCache method exec fail!", zap.Error(err))
 				var ids []int64
@@ -127,6 +127,8 @@ func (p *PublishVideoListFlow) prepareData() (err error) {
 }
 
 func (p *PublishVideoListFlow) packData() (err error) {
+	favorCache := cache.NewFavorCache()
+	favorDao := models.NewFavorDao()
 	// 使用协程简化循环TTL时间
 	var wg sync.WaitGroup
 	wg.Add(len(p.data))
@@ -134,11 +136,11 @@ func (p *PublishVideoListFlow) packData() (err error) {
 		go func(vdo *models.Video) {
 			defer wg.Done()
 			// 通过缓存查找点赞
-			if vdo.IsFavor, err = cache.NewFavorCache().SIsMemberIsExistFavor(p.favorKey, vdo.VideoId); err != nil {
+			if vdo.IsFavor, err = favorCache.SIsMemberIsExistFavor(p.favorKey, vdo.VideoId); err != nil {
 				zap.L().Error("service user_publish_video_list SIsMemberIsExistFavor method exec fail!", zap.Error(err))
 				// 如果缓存无效就去数据库中找
 				var isFavor int
-				if isFavor, err = models.NewFavorDao().IsExistFavor(p.userId, vdo.VideoId); err != nil {
+				if isFavor, err = favorDao.IsExistFavor(p.userId, vdo.VideoId); err != nil {
 					zap.L().Error("service user_publish_video_list IsExistFavor method exec fail!", zap.Error(err))
 				}
 				if isFavor == 1 {

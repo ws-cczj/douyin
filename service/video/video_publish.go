@@ -33,11 +33,12 @@ func (p *PublishFlow) Do() (err error) {
 	return nil
 }
 
+// checkNum 检查视频标题是否为null，检查标题是否超过字数限制
 func (p *PublishFlow) checkNum() error {
 	if p.title == "" {
 		return e.FailVideoTitleCantNull.Err()
 	}
-	if len(p.title) > consts.MaxVideoTileLimit {
+	if len(p.title) > consts.CheckMaxVideoTitle {
 		return e.FailVideoTitleLimit.Err()
 	}
 	return nil
@@ -50,7 +51,7 @@ func (p *PublishFlow) updateData() (err error) {
 	}
 	// 保证缓存一致性，先删除缓存，再更新数据库
 	go func() {
-		userKey := utils.AddCacheKey(consts.CacheUser, consts.CacheSetUserVideo, utils.I64toa(p.userId))
+		userKey := utils.StrI64(consts.CacheSetUserVideo, p.userId)
 		cache.NewUserCache().DelCache(userKey)
 
 		var videoIds []int64

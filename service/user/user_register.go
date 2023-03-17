@@ -50,11 +50,11 @@ func (r *RegisterFlow) checkNum() (err error) {
 		return e.FailNotKnow.Err()
 	}
 	// 检查用户名长度是否超过限度
-	if len(r.username) > consts.MaxUsernameLimit {
+	if len(r.username) > consts.CheckMaxUsername {
 		return e.FailUsernameLimit.Err()
 	}
 	// 检查用户密码长度是否超过限度
-	if len(r.password) > consts.MaxUserPasswordLimit {
+	if len(r.password) > consts.CheckMaxUserPassword {
 		return e.FailPasswordLimit.Err()
 	}
 	// 检查用户名是否重复

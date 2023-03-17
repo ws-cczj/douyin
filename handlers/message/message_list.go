@@ -25,9 +25,8 @@ func FriendMessageListHandler(c *gin.Context) {
 	//preMsgAt := utils.AtoI64(preMsgAtStr) / 1000
 	//zap.L().Debug("pre_msg_time", zap.Int64("pre_msg_at", preMsgAt))
 
-	var list []*mongodb.Message
-	var err error
-	if list, err = message.FriendMessage(userId, toUserId); err != nil {
+	list, err := message.FriendMessage(userId, toUserId)
+	if err != nil {
 		zap.L().Error("handlers message FriendMessage method exec fail!", zap.Error(err))
 		return
 	}

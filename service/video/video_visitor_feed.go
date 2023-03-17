@@ -15,7 +15,7 @@ func VisitorFeed(lastTime int64) (*FeedResponse, error) {
 }
 
 func NewVideoVisitorFeedFlow(lastTime int64) *VisitorFeedFlow {
-	return &VisitorFeedFlow{lastTime: lastTime, videos: make([]*models.Video, consts.MaxFeedVideos)}
+	return &VisitorFeedFlow{lastTime: lastTime, videos: make([]*models.Video, consts.CheckMaxFeedVideos)}
 }
 
 type VisitorFeedFlow struct {

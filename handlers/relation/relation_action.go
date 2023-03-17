@@ -15,8 +15,7 @@ import (
 func UserActionHandler(c *gin.Context) {
 	userId := c.GetInt64("user_id")
 	toUserIdStr := c.Query("to_user_id")
-	action := c.Query("action_type")
-	switch action {
+	switch action := c.Query("action_type"); action {
 	case "1":
 		if err := relation.UserFollow(userId, utils.AtoI64(toUserIdStr)); err != nil {
 			zap.L().Error("handlers relation_action UserFollow method exec fail!", zap.Error(err))

@@ -22,7 +22,7 @@ func UserFeed(lastTime, userId int64) (*FeedResponse, error) {
 }
 
 func NewVideoUserFeedFlow(lastTime, userId int64) *UserFeedFlow {
-	return &UserFeedFlow{lastTime: lastTime, userId: userId, videos: make([]*models.Video, consts.MaxFeedVideos)}
+	return &UserFeedFlow{lastTime: lastTime, userId: userId, videos: make([]*models.Video, consts.CheckMaxFeedVideos)}
 }
 
 type UserFeedFlow struct {
@@ -81,8 +81,8 @@ func (u *UserFeedFlow) prepareData() (err error) {
 	favorDao := models.NewFavorDao()
 	favorCache := cache.NewFavorCache()
 	relationCache := cache.NewRelationCache()
-	followKey := utils.AddCacheKey(consts.CacheRelation, consts.CacheSetUserFollow, utils.I64toa(u.userId))
-	favorKey := utils.AddCacheKey(consts.CacheFavor, consts.CacheSetUserFavor, utils.I64toa(u.userId))
+	followKey := utils.StrI64(consts.CacheSetUserFollow, u.userId)
+	favorKey := utils.StrI64(consts.CacheSetUserFavor, u.userId)
 	var wg sync.WaitGroup
 	for i, video := range u.videos {
 		if video == nil {

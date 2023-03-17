@@ -21,6 +21,11 @@ func AtoI64(k string) int64 {
 	return res
 }
 
+// StrI64 拼接字符串和int64
+func StrI64(key string, id int64) string {
+	return fmt.Sprintf("%s:%d", key, id)
+}
+
 // ISlice64toa intSlice64转为string
 func ISlice64toa(ks []int64) string {
 	var b strings.Builder
@@ -65,25 +70,14 @@ func SaveImageFromVideo(name string, isDebug bool) error {
 	if isDebug {
 		v2i.Debug()
 	}
-	v2i.InputPath = filepath.Join(conf.Conf.PublicPath, fmt.Sprintf("%s%s", name, consts.DefaultVideoSuffix))
-	v2i.OutputPath = filepath.Join(conf.Conf.PublicPicPath, fmt.Sprintf("%s%s", name, consts.DefaultImageSuffix))
+	v2i.InputPath = filepath.Join(conf.Conf.PublicPath, name+consts.DefaultVideoSuffix)
+	v2i.OutputPath = filepath.Join(conf.Conf.PublicPicPath, name+consts.DefaultImageSuffix)
 	v2i.FrameCount = 1
 	queryString, err := v2i.GetQueryString()
 	if err != nil {
 		return err
 	}
 	return v2i.ExecCommand(queryString)
-}
-
-// AddCacheKey 拼接缓存key
-func AddCacheKey(key ...string) string {
-	var b strings.Builder
-	b.Grow(len(key) + 1)
-	b.WriteString(consts.CacheDouyin)
-	for _, k := range key {
-		b.WriteString(k)
-	}
-	return b.String()
 }
 
 // FormatTime 格式化评论时间

@@ -24,6 +24,7 @@ type InfoFlow struct {
 
 func (i *InfoFlow) Do() (*models.User, error) {
 	if err := i.checkNum(); err != nil {
+		zap.L().Error("service user_info checkNum method exec fail!", zap.Error(err))
 		return nil, err
 	}
 	if err := i.prepareData(); err != nil {

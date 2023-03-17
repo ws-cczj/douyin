@@ -49,7 +49,7 @@ func (f *FavorVideoListFlow) checkNum() error {
 		return e.FailServerBusy.Err()
 	}
 	// 预热点赞缓存, 这里预热的是目标用户的点赞缓存, 并不是当前用户
-	f.favorKey = utils.AddCacheKey(consts.CacheFavor, consts.CacheSetUserFavor, utils.I64toa(f.userId))
+	f.favorKey = utils.StrI64(consts.CacheSetUserFavor, f.userId)
 	if err := cache.NewFavorCache().TTLIsExpiredCache(f.favorKey); err != nil {
 		zap.L().Warn("service user_favor_video_list TTLIsExpiredCache method exec fail!", zap.Error(err))
 		var videos []int64
@@ -93,9 +93,8 @@ func (f *FavorVideoListFlow) packData() (err error) {
 
 	// 根据视频进行遍历填充数据
 	// 这里需要注意，现在查找的是当前用户对与这些视频的关系，也就是 tkUserId to videoId
-	tkUStr := utils.I64toa(f.tkUserId)
-	followKey := utils.AddCacheKey(consts.CacheRelation, consts.CacheSetUserFollow, tkUStr)
-	favorKey := utils.AddCacheKey(consts.CacheFavor, consts.CacheSetUserFavor, tkUStr)
+	followKey := utils.StrI64(consts.CacheSetUserFollow, f.tkUserId)
+	favorKey := utils.StrI64(consts.CacheSetUserFavor, f.tkUserId)
 
 	var wg sync.WaitGroup
 	wg.Add(len(f.data))

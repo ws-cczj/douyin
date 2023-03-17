@@ -31,7 +31,6 @@ redis:
   relation_db: 2
   video_db: 3
   favor_db: 4
-  comment_db: 5
   pool_size: 100
 mongo:
   db: "douyin"

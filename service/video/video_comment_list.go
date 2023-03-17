@@ -60,7 +60,7 @@ func (c *CommentListFlow) checkNum() (err error) {
 
 func (c *CommentListFlow) prepareData() (err error) {
 	// 找到该视频下的评论数量
-	videoKey := utils.AddCacheKey(consts.CacheVideo, consts.CacheStringVideoComment, utils.I64toa(c.videoId))
+	videoKey := utils.StrI64(consts.CacheStringVideoComment, c.videoId)
 	var comments int64
 	if comments, err = cache.NewVideoCache().GetEXVideoComments(videoKey); err != nil {
 		if comments, err = models.NewVideoDao().QueryVideoCommentsById(c.videoId); err != nil {
@@ -82,7 +82,7 @@ func (c *CommentListFlow) packData() (err error) {
 	// 判断当前用户与评论用户之间的关系
 	relationDao := models.NewRelationDao()
 	relationCache := cache.NewRelationCache()
-	followKey := utils.AddCacheKey(consts.CacheRelation, consts.CacheSetUserFollow, utils.I64toa(c.userId))
+	followKey := utils.StrI64(consts.CacheSetUserFollow, c.userId)
 	var wg sync.WaitGroup
 	wg.Add(len(c.data))
 	for _, comment := range c.data {

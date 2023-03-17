@@ -56,7 +56,7 @@ func (u *UserRelationListFlow) checkNum() (err error) {
 	go func() {
 		defer wg.Done()
 		// 预热用户关注缓存 这里预热的是目标用户
-		u.followKey = utils.AddCacheKey(consts.CacheRelation, consts.CacheSetUserFollow, utils.I64toa(u.userId))
+		u.followKey = utils.StrI64(consts.CacheSetUserFollow, u.userId)
 		if err = relationCache.TTLIsExpiredCache(u.followKey); err != nil {
 			zap.L().Warn("service user_publish_video_list relationCache.TTLIsExpiredCache method exec fail!", zap.Error(err))
 			var ids []int64
@@ -67,7 +67,7 @@ func (u *UserRelationListFlow) checkNum() (err error) {
 		}
 	}()
 	// 预热用户粉丝缓存
-	u.followerKey = utils.AddCacheKey(consts.CacheRelation, consts.CacheSetUserFollower, utils.I64toa(u.userId))
+	u.followerKey = utils.StrI64(consts.CacheSetUserFollower, u.userId)
 	if err = relationCache.TTLIsExpiredCache(u.followerKey); err != nil {
 		zap.L().Warn("service user_publish_video_list relationCache.TTLIsExpiredCache method exec fail!", zap.Error(err))
 		var ids []int64
@@ -121,7 +121,7 @@ func (u *UserRelationListFlow) prepareData() (err error) {
 }
 
 func (u *UserRelationListFlow) packData() (err error) {
-	tkUserKey := utils.AddCacheKey(consts.CacheRelation, consts.CacheSetUserFollow, utils.I64toa(u.tkUserId))
+	tkUserKey := utils.StrI64(consts.CacheSetUserFollow, u.tkUserId)
 	relationCache := cache.NewRelationCache()
 	relationDao := models.NewRelationDao()
 	var wg sync.WaitGroup

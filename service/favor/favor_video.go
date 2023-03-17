@@ -78,7 +78,7 @@ func (f *FavorVideoFlow) updateData() (err error) {
 	}
 	// 保证缓存一致性，先删除后更新缓存
 	go func() {
-		favorKey := utils.AddCacheKey(consts.CacheFavor, consts.CacheSetUserFavor, utils.I64toa(f.userId))
+		favorKey := utils.StrI64(consts.CacheSetUserFavor, f.userId)
 		cache.NewFavorCache().DelCache(favorKey)
 
 		var videos []int64
