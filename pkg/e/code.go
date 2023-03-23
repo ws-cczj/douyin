@@ -4,6 +4,7 @@ import "errors"
 
 // 以Fail开头统一进行错误码表示
 const (
+	// checkNum
 	FailUsernameExist Code = iota + 10000
 	FailUsernameNotExist
 	FailUsernameLimit
@@ -20,6 +21,8 @@ const (
 	FailRelationNotFriend
 	FailCantFollowYourself
 	FailRepeatAction
+	FailPathNULL
+	// Err
 	FailTokenExpired
 	FailTokenVerify
 	FailTokenInvalid
@@ -31,6 +34,8 @@ const (
 	FailInitSnowFlake
 	FailServerBusy
 	FailCacheExpired
+	FailFFmepgExec
+	// NotKnow
 	FailNotKnow
 )
 
@@ -51,18 +56,21 @@ var failMsg = map[Code]string{
 	FailRelationNotFriend:  "he/she still not you friend!",
 	FailCantFollowYourself: "cant to follow yourself!",
 	FailRepeatAction:       "action operator repeat!",
-	FailTokenExpired:       "user token time expired!",
-	FailTokenVerify:        "user token verify fail!",
-	FailTokenInvalid:       "token invalid!",
-	FailInitFilter:         "init filter fail!",
-	FailInitLogger:         "init logger fail!",
-	FailInitMongodb:        "init mongoDb fail!",
-	FailInitMysql:          "init mysql fail!",
-	FailInitRedis:          "init redis fail!",
-	FailInitSnowFlake:      "init snowFlake fail!",
-	FailServerBusy:         "server busy!",
-	FailCacheExpired:       "cache expired! (ttl < 0)",
-	FailNotKnow:            "not know error!",
+	FailPathNULL:           "input or output path is null!",
+	// Err
+	FailTokenExpired:  "user token time expired!",
+	FailTokenVerify:   "user token verify fail!",
+	FailTokenInvalid:  "token invalid!",
+	FailInitFilter:    "init filter fail!",
+	FailInitLogger:    "init logger fail!",
+	FailInitMongodb:   "init mongoDb fail!",
+	FailInitMysql:     "init mysql fail!",
+	FailInitRedis:     "init redis fail!",
+	FailInitSnowFlake: "init snowFlake fail!",
+	FailServerBusy:    "server busy!",
+	FailCacheExpired:  "cache expired! (ttl < 0)",
+	FailFFmepgExec:    "video cover ffmpeg fail!",
+	FailNotKnow:       "not know error!",
 }
 
 type Code int32

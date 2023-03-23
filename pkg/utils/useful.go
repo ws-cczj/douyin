@@ -8,6 +8,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"go.uber.org/zap"
 )
 
 // I64toa int64转为string
@@ -23,7 +25,8 @@ func AtoI64(k string) int64 {
 
 // StrI64 拼接字符串和int64
 func StrI64(key string, id int64) string {
-	return fmt.Sprintf("%s:%d", key, id)
+	// return fmt.Sprintf("%s:%d", key, id)
+	return key + I64toa(id)
 }
 
 // ISlice64toa intSlice64转为string
@@ -31,7 +34,7 @@ func ISlice64toa(ks []int64) string {
 	var b strings.Builder
 	b.Grow(len(ks)*2 - 1)
 	for i, k := range ks {
-		b.WriteString(strconv.FormatInt(k, 10))
+		b.WriteString(I64toa(k))
 		if i != len(ks)-1 {
 			b.WriteString(",")
 		}
@@ -75,6 +78,7 @@ func SaveImageFromVideo(name string, isDebug bool) error {
 	v2i.FrameCount = 1
 	queryString, err := v2i.GetQueryString()
 	if err != nil {
+		zap.L().Error("middleware useful GetQueryString method exec fail!", zap.Error(err))
 		return err
 	}
 	return v2i.ExecCommand(queryString)

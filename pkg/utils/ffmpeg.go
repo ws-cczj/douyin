@@ -9,7 +9,7 @@ import "C"
 import (
 	"douyin/conf"
 	"douyin/consts"
-	"errors"
+	"douyin/pkg/e"
 	"fmt"
 	"strings"
 	"unsafe"
@@ -35,7 +35,7 @@ var videoChanger Video2Image
 
 // cmdJoin 执行命令拼接
 func cmdJoin(s1, s2 string) string {
-	return fmt.Sprintf(" %s %s ", s1, s2)
+	return " " + s1 + " " + s2
 }
 
 func (v *Video2Image) Debug() {
@@ -44,7 +44,7 @@ func (v *Video2Image) Debug() {
 
 func (v *Video2Image) GetQueryString() (string, error) {
 	if v.InputPath == "" || v.OutputPath == "" {
-		return "", errors.New("输入输出路径未指定")
+		return "", e.FailPathNULL.Err()
 	}
 	var b strings.Builder
 	b.WriteString(conf.Conf.Ffmpeg.FfmpegPath)
@@ -74,7 +74,7 @@ func (v *Video2Image) ExecCommand(cmd string) error {
 	defer C.free(unsafe.Pointer(cCmd))
 	status := C.startCmd(cCmd)
 	if status != 0 {
-		return errors.New("视频切截图失败")
+		return e.FailFFmepgExec.Err()
 	}
 	return nil
 }

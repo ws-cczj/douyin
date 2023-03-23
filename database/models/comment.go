@@ -34,6 +34,7 @@ func NewCommentDao() *CommentDao {
 	return commentDao
 }
 
+// PublishVideoComment 发布视频评论
 func (c *CommentDao) PublishVideoComment(userId, videoId int64, content string) (commentId int64, err error) {
 	var tx *sql.Tx
 	if tx, err = db.Begin(); err == nil {
@@ -73,6 +74,7 @@ func (c *CommentDao) PublishVideoComment(userId, videoId int64, content string) 
 	return
 }
 
+// DeleteVideoComment 删除视频评论
 func (c *CommentDao) DeleteVideoComment(videoId, commentId int64) (err error) {
 	var tx *sql.Tx
 	if tx, err = db.Begin(); err == nil {

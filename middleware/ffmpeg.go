@@ -44,7 +44,7 @@ func Ffmpeg(isDebug bool) gin.HandlerFunc {
 		}
 		// 获取拼接名称
 		name := fmt.Sprintf("%d-%d", time.Now().Unix(), userId)
-		newName := fmt.Sprintf("%s%s", name, suffix)
+		newName := name + suffix
 		var wg sync.WaitGroup
 		wg.Add(1)
 		go func() {
@@ -66,7 +66,7 @@ func Ffmpeg(isDebug bool) gin.HandlerFunc {
 			return
 		}
 		c.Set("play_url", utils.GetFileUrl(newName))
-		c.Set("cover_url", utils.GetPicUrl(fmt.Sprintf("%s%s", name, consts.DefaultImageSuffix)))
+		c.Set("cover_url", utils.GetPicUrl(name+consts.DefaultImageSuffix))
 		c.Next()
 	}
 }
