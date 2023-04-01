@@ -25,8 +25,8 @@ func AtoI64(k string) int64 {
 
 // StrI64 拼接字符串和int64
 func StrI64(key string, id int64) string {
-	// return fmt.Sprintf("%s:%d", key, id)
-	return key + I64toa(id)
+	return fmt.Sprintf("%s:%d", key, id)
+	//return key + I64toa(id)
 }
 
 // ISlice64toa intSlice64转为string
